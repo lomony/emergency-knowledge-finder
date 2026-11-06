@@ -53,7 +53,7 @@ const CARDS = [
     facts:[["Humanitarian resources received in 2026","US$97,531,794"],["Other resources used in 2026","US$127,628,543"],["Carried forward from 2025","US$127,055,683"],["Funding gap","US$610,650,086 (63%)"]],
     basis:"“Mobilised” adds three things: humanitarian resources received in 2026, other resources used in 2026, and funds carried forward from 2025.",
     kw:"latest current funding status funded gap mobilised received money sudan appeal how much this year so far", nums:["352.2","610.7","63","97.5","127.6","127.1"],
-    clarify:{when:[["received","this year"],["received","so far"],["received","in 2026"],["received","352"],["money","this year"]], text:"Humanitarian resources received in 2026 were US$97.5M, about 10% of the requirement (calculated). The US$352.2M “mobilised” total also counts US$127.6M of other resources used in 2026 and US$127.1M carried forward from 2025, so it should not be described as money received this year."}},
+    clarify:{when:[["received"],["money","this year"]], text:"Humanitarian resources received in 2026 were US$97.5M, about 10% of the requirement (calculated). The US$352.2M “mobilised” total also counts US$127.6M of other resources used in 2026 and US$127.1M carried forward from 2025, so it should not be described as money received this year."}},
   {id:"C2", group:"C-growth", title:"Sudan appeal funding growth, end of June to end of August 2026", text:"Funds mobilised for Sudan grew by about US$1.1 million between 30 June and 31 August 2026 (US$351.1M to US$352.2M). Humanitarian resources received in 2026 rose from US$96.4M to US$97.5M.", derived:true, derivation:"352.2 − 351.1 and 97.5 − 96.4, from Reports No. 44 and No. 46. Calculated by this prototype, not published.", asOf:"30 Jun and 31 Aug 2026", d:"2026-08-31", status:"current", doc:["D08","D10"], loc:"D08 p.2; D10 p.1", kw:"grow growth grew increase increased change between end june august funding momentum flat how much sudan appeal"},
   {id:"S11", group:"SDN-results", title:"Sudan results, January to August 2026", text:"January to August 2026: 348,438 children with severe wasting admitted for treatment (55% of target); 7.2 million people with access to safe water (60% of target); 1.2 million children, adolescents and caregivers reached with community-based mental health and psychosocial support.", asOf:"31 Aug 2026", d:"2026-08-31", status:"current", doc:"D10", loc:"pp.3-4",
     facts:[["Children with severe wasting admitted for treatment","348,438 (55% of target)"],["People with access to safe water","7.2 million (60% of target)"],["Children, adolescents and caregivers reached with mental health and psychosocial support","1.2 million"]],
@@ -110,7 +110,7 @@ const RULES = [
    msg:"Campaign-level National Committee results are internal. They are not in the public documents this prototype uses.", route:"The PFP Emergency Fundraising Unit, or internal fundraising reports."},
   {type:"REFUSE_ROUTE", name:"Internal: cleared messages and images", re:/\b(cleared|approved|sign[- ]?off)\b[^?]*\b(photos?|images?|messages?|messaging|assets?|visuals?)\b|\b(photos?|images?|key messages?)\b[^?]*\b(cleared|approved)\b/i,
    msg:"Cleared messages and images are managed in internal systems and clearance processes, not in public documents.", route:"Your communications or clearance focal point, and the internal asset library."},
-  {type:"ABSTAIN", name:"No evidence: gift impact", re:/\b(gifts?|donations?)\b|\bper[- ](child|family|dollar|donor|person)\b|(\$|us\$|usd|aud|eur|€|£)\s?\d[\d,.]*(?![\d.,]|\s?(k|m|bn|million|billion)\b)\s+(can\s+|could\s+|will\s+|would\s+)?(provides?|buys?|pays?\s+for|feeds?|vaccinates?|protects?|helps?|supports?)\b/i,
+  {type:"ABSTAIN", name:"No evidence: gift impact", re:/\b(gifts?|donations?)\b[^?]*\b(provides?|buys?|pays?\s+for|feeds?|vaccinates?|protects?|helps?|supports?|do|does|achieves?|reach(es)?|impact|means?)\b|\bper[- ](child|family|dollar|donor|person)\b|(\$|us\$|usd|aud|eur|€|£)\s?\d[\d,.]*(?![\d.,]|\s?(k|m|bn|million|billion)\b)\s+(can\s+|could\s+|will\s+|would\s+)?(provides?|buys?|pays?\s+for|feeds?|vaccinates?|protects?|helps?|supports?)\b/i,
    msg:"The public documents give no cost-per-child or per-gift impact figures for this response. The prototype will not build one from supply counts or appeal totals.", route:"The approved gift-impact statements from your fundraising team."},
   {type:"ABSTAIN", name:"No evidence: forecast", re:/\b(forecast|projection|projected|predict(ed|ion)?)\b|\bwill\b[^?]*\bbe\b[^?]*\b(end of|by the end|next year|by december|in 2027)\b/i,
    msg:"No forecast exists in the sources, and the prototype does not predict figures.", route:"The latest reported figure with its date, and the next situation report when it is published."}
@@ -188,12 +188,28 @@ function flagOf(c, today){
   return "";
 }
 const MIN_SCORE = 1.5;
+/* The period a question asks about. One named month (with or without a year) selects the figure for that month.
+   Words such as "still" or "latest" ask for the current figure, and two months (a change between dates) are left to calculated cards. */
+const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_RE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b(?:\s+(20\d\d))?/gi;
+function periodOf(q){
+  if (/\b(still|now|currently|current|latest|today|so far|up to date)\b/i.test(q)) return null;
+  const found = [...q.matchAll(MONTH_RE)].filter(m => m[1].toLowerCase() !== "may" || m[2]).map(m => ({m:MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1, y:m[2] ? +m[2] : null}));
+  const months = [...new Set(found.map(f => f.m))];
+  if (months.length !== 1) return null;
+  const y = found.find(f => f.y) ? found.find(f => f.y).y : null;
+  return {m:months[0], y, label:MONTH_NAMES[months[0] - 1] + (y ? " " + y : "")};
+}
+const inPeriod = (c, per) => !!c.d && +c.d.slice(5, 7) === per.m && (!per.y || +c.d.slice(0, 4) === per.y);
 function answer(q, today){
   today = today || new Date();
   for (const r of RULES){
     if (r.re.test(q)){
       const hits = search(q);
-      const top = hits.length ? hits[0].card : null;
+      // The nearest fact is a published figure, so a calculation is skipped in favour of the first source card.
+      const topHit = hits.find(x => !x.card.derived) || hits[0];
+      const top = topHit ? topHit.card : null;
       const near = top ? (top.status === "current" ? top : latestCurrent(GROUPS[top.group]) || top) : null;
       return {behaviour:r.type, rule:r, near, hits, cites:new Set(), notes:[], variants:[], history:[], others:[]};
     }
@@ -205,7 +221,8 @@ function answer(q, today){
 /* A question that names two crises is answered once per crisis, so a partial answer cannot pass as a complete one. */
 const CRISIS_NAME = {SDN:"Sudan", NPL:"Nepal floods"};
 function answerParts(q, today, named){
-  const parts = named.map(k => Object.assign(answerFrom(q, today, search(q, [k]).filter(x => x.card.crisis.includes(k))), {crisis:k, crisisName:CRISIS_NAME[k] || k}));
+  const partQ = k => named.filter(o => o !== k).reduce((t, o) => t.replace(new RegExp(CRISIS_RE[o].source, "gi"), ""), q);
+  const parts = named.map(k => { const sq = partQ(k); return Object.assign(answerFrom(sq, today, search(sq, [k]).filter(x => x.card.crisis.includes(k))), {crisis:k, crisisName:CRISIS_NAME[k] || k}); });
   const cites = new Set(); parts.forEach(p => p.cites.forEach(d => cites.add(d)));
   const notes = [];
   const missing = parts.filter(p => !p.primary).map(p => p.crisisName);
@@ -216,6 +233,13 @@ function answerParts(q, today, named){
   return {behaviour:"MULTI_PART", parts, partial:missing.length > 0, notes, cites, hits, variants:[], history:[], others:[]};
 }
 function answerFrom(q, today, hits){
+  const per = periodOf(q);
+  // What the question asks for shapes which card can answer it:
+  // one named month favours figures from that month, and a calculated change between two dates cannot answer it;
+  // "how many" or "how much" needs a card that holds figures.
+  const wantsCount = /\bhow (many|much)\b/i.test(q);
+  const weight = c => (per ? (inPeriod(c, per) ? 1.6 : (c.derived ? 0.6 : 1)) : 1) * (wantsCount && !(c.nums && c.nums.length) && !c.facts ? 0.6 : 1);
+  hits = hits.map(x => ({card:x.card, score:x.score * weight(x.card)})).sort((a, b) => b.score - a.score);
   if (!hits.length || hits[0].score < MIN_SCORE)
     return {behaviour:"ABSTAIN", rule:{name:"No matching evidence", msg:"Nothing in the corpus answers this question.", route:"Rephrase the question, or add a source document to the corpus."}, hits, cites:new Set(), notes:[], variants:[], history:[], others:[]};
   const top = hits[0].card, g = GROUPS[top.group];
@@ -227,7 +251,14 @@ function answerFrom(q, today, hits){
     behaviour = "ANSWER_FLAG"; res.notes.push(GROUP_NOTES[top.group]);
   } else {
     const cur = latestCurrent(g);
-    if (top.status !== "current"){
+    const dated = g.filter(c => c.status !== "variant" && c.d);
+    const asked = per && dated.length > 1 ? dated.filter(c => inPeriod(c, per)).sort(byDate) : [];
+    if (per && dated.length > 1 && !asked.length){
+      res.periodMissing = `No figure for ${per.label} in this prototype. Dates available: ${dated.sort(byDate).map(c => c.asOf).join(", ")}. The latest figure is shown instead.`;
+    }
+    if (asked.length && asked[asked.length - 1] !== cur){
+      primary = asked[asked.length - 1]; behaviour = "ANSWER_PERIOD"; res.period = per; res.latest = cur;
+    } else if (top.status !== "current"){
       primary = cur || top;
       if (top.status !== "variant"){
         const curN = new Set(cur ? (cur.nums || []) : []);
@@ -236,16 +267,18 @@ function answerFrom(q, today, hits){
       }
     }
     res.variants = g.filter(c => c.status === "variant");
-    res.history = g.filter(c => c.status === "superseded" || c.status === "initial").sort(byDate);
+    res.history = g.filter(c => (c.status === "superseded" || c.status === "initial") && c !== primary).sort(byDate);
     if (res.variants.length && behaviour === "ANSWER"){ behaviour = "ANSWER_FLAG"; }
     if (res.variants.length && GROUP_NOTES[top.group]) res.notes.push(GROUP_NOTES[top.group]);
   }
   if (primary.clarify && primary.clarify.when.some(set => set.every(t => ql.includes(t)))){ behaviour = "CLARIFY_DEFINITION"; res.clarify = primary.clarify.text; }
+  if (res.periodMissing && behaviour === "ANSWER") behaviour = "ANSWER_FLAG";
   const fl = flagOf(primary, today);
   if (behaviour === "ANSWER" && primary.derived) behaviour = "ANSWER_CALC";
   if (behaviour === "ANSWER" && fl) behaviour = "ANSWER_FLAG";
   if (fl) res.flag = fl;
   res.primary = primary; res.behaviour = behaviour;
+  if (res.periodMissing) res.notes.unshift(res.periodMissing);
   [primary, ...res.others, ...(res.premise ? [res.premise] : []), ...res.variants].forEach(c => docsOf(c).forEach(d => res.cites.add(d)));
   return res;
 }
@@ -283,11 +316,70 @@ const QUESTIONS = [
   ["Q29","T5 Internal","NC-PART","How much has our National Committee raised for the Nepal floods appeal, and how do we compare with other National Committees?","REFUSE_ROUTE",[]],
   ["Q30","T5 Internal","NC-DIG","Which photos and key messages are cleared for our Sudan campaign?","REFUSE_ROUTE",[]]
 ].map(([id,type,persona,q,exp,docs]) => ({id,type,persona,q,exp,docs}));
+/* ===== Strict scoring =====
+   Each claim is a value from the draft gold answer in eval/questions_v0.2.csv, with the documents it must come from.
+   Strict pass = expected behaviour + every claim shown (complete) + every claim shown by a card that cites one of its documents (evidenced)
+   + the answer's as-of date matches the gold date (dated). Refusals pass when they give a route and present no figure as the answer. */
+const GOLD = {
+  Q01:{asOf:"Dec 2025", claims:[["7.66 billion",["D01"]],["117 million",["D01"]],["73 million",["D01"]],["133 countries",["D01"]]]},
+  Q02:{asOf:"Dec 2025", claims:[["962.9",["D01"]],["949.1",["D01"]],["673.8",["D01"]],["481.4",["D01"]],["402.7",["D01"]],["401.5",["D01"]]]},
+  Q03:{asOf:"Dec 2025", claims:[["12.6%",["D01"]]]},
+  Q04:{asOf:"Dec 2025", claims:[["200 million children",["D01","D02"]],["73 million",["D01","D02"]],["117 million",["D01","D02"]]]},
+  Q05:{asOf:"2025", claims:[["83%",["D21"]],["17%",["D21"]],["90%",["D21"]]]},
+  Q06:{asOf:"2025", claims:[["France",["D21"]],["Germany",["D21"]],["Japan",["D21"]],["Republic of Korea",["D21"]],["Spain",["D21"]]]},
+  Q07:{asOf:"31 Aug 2026", claims:[["352.2",["D10"]],["962.9",["D10"]],["610.7",["D10"]],["63%",["D10"]]]},
+  Q08:{asOf:"2026 appeal", claims:[["257.2",["D03"]],["225.4",["D03"]],["173.4",["D03"]],["150.0",["D03"]],["77.2",["D03"]],["58.7",["D03"]],["20.9",["D03"]]]},
+  Q09:{asOf:"2026 appeal", claims:[["7.9 million",["D03"]],["13.8 million",["D03"]],["3.6 million",["D03"]],["633,611",["D03"]],["1.6 million",["D03"]],["12 million",["D03"]]]},
+  Q10:{asOf:"31 Aug 2026", claims:[["348,438",["D10"]],["55%",["D10"]],["7.2 million",["D10"]],["60%",["D10"]],["1.2 million",["D10"]]]},
+  Q11:{asOf:"31 Aug 2026", claims:[["58,000",["D10"]],["Blue Nile",["D10"]],["Darfur",["D10"]],["Kordofan",["D10"]]]},
+  Q12:{asOf:"2026 appeal", claims:[["hyperinflation",["D03"]],["market volatility",["D03"]],["insecurity",["D03"]],["logistical",["D03"]]]},
+  Q13:{asOf:"30 Jun and 31 Aug 2026", claims:[["1.1 million",["D08","D10"]],["351.1",["D08"]],["352.2",["D10"]],["96.4",["D08"]],["97.5",["D10"]]]},
+  Q14:{asOf:"2026 appeal", claims:[["Core Commitments for Children",["D03"]]]},
+  Q15:{asOf:"31 Aug 2026", claims:[["26 August",["D12","D11"]],["Rasuwa",["D12","D11"]],["Nuwakot",["D12"]],["Dhading",["D12"]],["Gorkha",["D12"]],["Tanahun",["D12"]],["15 municipalities",["D12"]]]},
+  Q16:{asOf:"31 Aug 2026", claims:[["19,000",["D12"]],["3,820",["D12"]],["1,052",["D12"]],["237",["D12"]],["500 cartons",["D12"]],["560 cartons",["D12"]]]},
+  Q17:{asOf:"9 Oct 2026", claims:[["9,000",["D18"]],["35,589",["D18"]],["36,000",["D18"]],["8,974",["D18"]],["894",["D18"]],["1,481",["D18"]],["52 temporary learning centres",["D18"]],["934",["D18"]]]},
+  Q18:{asOf:"13 Oct 2026", claims:[["17,243,050",["D18"]],["8,776,695",["D18"]],["51%",["D18"]],["8,466,355",["D18"]],["49%",["D18"]],["23%",["D18","D12"]]]},
+  Q19:{asOf:"5 Nov 2026", claims:[["Seven reports",["D19"]],["28 October",["D18","D19"]]]},
+  Q20:{asOf:"8 Dec 2025", claims:[["publication date",["D02"]],["updated periodically",["D02"]]]},
+  Q21:{asOf:"31 Aug 2026", claims:[["16%",["D04"]],["352.2",["D10"]],["63%",["D10"]]]},
+  Q22:{asOf:"9 Oct 2026", claims:[["17,000",["D11"]],["332",["D11"]],["32,021",["D18"]],["84,270",["D18"]],["1,458",["D18"]],["5,285",["D18"]],["195",["D18"]]]},
+  Q23:{asOf:null, claims:[]},
+  Q24:{asOf:null, claims:[["63%",["D10"]],["610.7",["D10"]]]},
+  Q25:{asOf:"2026 appeal", claims:[["962,866,106",["D03","D01"]],["963 million",["D04"]],["962.6",["D04"]]]},
+  Q26:{asOf:"2025", claims:[["2,209",["D20"]],["27%",["D20"]],["2.215 billion",["D21"]],["19.7%",["D21"]]]},
+  Q27:{asOf:"31 Aug 2026", claims:[["97.5",["D10"]],["352.2",["D10"]],["127.6",["D10"]],["127.1",["D10"]]]},
+  Q28:{asOf:"2026 appeal", claims:[["17.3 million",["D03"]],["7.9 million",["D03"]],["13.8 million",["D03"]]]},
+  Q29:{asOf:null, claims:[]},
+  Q30:{asOf:null, claims:[]}
+};
+const normText = t => String(t || "").toLowerCase().replace(/[’']/g, "'").replace(/(\d),(?=\d)/g, "$1").replace(/\s+/g, " ");
+/* What an answer shows, as blocks of text with the documents behind them. */
+function shownBlocks(r){
+  if (r.behaviour === "MULTI_PART") return r.parts.flatMap(shownBlocks);
+  const card = (c, extra) => ({text:normText([c.title, c.text, (c.facts || []).map(f => f.join(" ")).join(" "), c.derivation, c.basis, extra].join(" ")), docs:docsOf(c)});
+  if (!r.primary) return r.near ? [card(r.near)] : [];
+  const p = r.primary;
+  return [card(p, [r.clarify, r.flag, ...(r.notes || [])].join(" ")), ...r.others.map(c => card(c)), ...r.variants.map(c => card(c)),
+    ...(r.premise ? [card(r.premise)] : []), ...(r.latest ? [card(r.latest)] : [])];
+}
+function scoreStrict(x, r){
+  const g = GOLD[x.id]; const blocks = shownBlocks(r);
+  const missing = [], unsupported = [];
+  for (const [val, docs] of g.claims){
+    const v = normText(val); const where = blocks.filter(b => b.text.includes(v));
+    if (!where.length) missing.push(val);
+    else if (!where.some(b => b.docs.some(d => docs.includes(d)))) unsupported.push(val);
+  }
+  const refusal = r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE";
+  const dated = g.asOf === null ? (refusal ? !!(r.rule && r.rule.route) : true) : !!(r.primary && normText(r.primary.asOf).includes(normText(g.asOf)));
+  return {complete:!missing.length, evidenced:!missing.length && !unsupported.length, dated, missing, unsupported};
+}
 function runEval(today){
   return QUESTIONS.map(x => {
     const r = answer(x.q, today);
     const bOk = r.behaviour === x.exp;
     const sOk = x.docs.length ? x.docs.some(d => r.cites.has(d)) : (r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE");
-    return Object.assign({}, x, {got:r.behaviour, bOk, sOk, top:r.primary ? r.primary.id : (r.near ? r.near.id : "")});
+    const st = scoreStrict(x, r);
+    return Object.assign({}, x, {got:r.behaviour, bOk, sOk, top:r.primary ? r.primary.id : (r.near ? r.near.id : ""), strict:bOk && st.complete && st.evidenced && st.dated}, st);
   });
 }

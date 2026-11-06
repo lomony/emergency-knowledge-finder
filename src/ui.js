@@ -2,7 +2,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const BEH = {ANSWER:["ok","Answer"], ANSWER_CALC:["calc","Calculated answer"], ANSWER_FLAG:["warn","Answer with a flag"], CORRECT_PREMISE:["warn","Outdated figure corrected"], CLARIFY_DEFINITION:["calc","Definition check"], ABSTAIN:["old","Not in the sources"], REFUSE_ROUTE:["stop","Internal information"], MULTI_PART:["calc","Answered in parts"]};
+const BEH = {ANSWER:["ok","Answer"], ANSWER_CALC:["calc","Calculated answer"], ANSWER_FLAG:["warn","Answer with a flag"], CORRECT_PREMISE:["warn","Outdated figure corrected"], CLARIFY_DEFINITION:["calc","Definition check"], ABSTAIN:["old","Not in the sources"], REFUSE_ROUTE:["stop","Internal information"], MULTI_PART:["calc","Answered in parts"], ANSWER_PERIOD:["ok","Figure for the date asked"]};
 const STATUS = {current:["ok","Latest in this prototype"], superseded:["old","Superseded"], initial:["old","Initial figure"], variant:["warn","Variant"]};
 const TYPECLS = {"Normal":"", "T1 Stale":"t1", "T2 No evidence":"t2", "T3 Variant":"t3", "T4 Definition":"t4", "T5 Internal":"t5"};
 const pill = (cls, label) => `<span class="pill ${cls}">${esc(label)}</span>`;
@@ -31,14 +31,16 @@ function answerBody(r){
     return h;
   }
   const p = r.primary;
-  if (r.behaviour === "CORRECT_PREMISE") h += `<p class="premise">The figure in the question is from ${esc(r.premise.asOf)} (${esc(docsOf(r.premise).map(d => DOCS[d] ? DOCS[d].t : d).join(", "))}). The latest figure in this prototype is below.</p>`;
+  if (r.behaviour === "CORRECT_PREMISE") h += `<div class="premise"><p>The figure in the question is from ${esc(r.premise.asOf)} (${esc(docsOf(r.premise).map(d => DOCS[d] ? DOCS[d].t : d).join(", "))}). The latest figure in this prototype is below.</p><p class="small"><strong>What that earlier source said:</strong> ${esc(r.premise.text)} ${docsOf(r.premise).map(refLink).join(" ")}</p></div>`;
   if (r.clarify) h += `<p class="lead">${esc(r.clarify)}</p>`;
+  if (r.behaviour === "ANSWER_PERIOD") h += `<p class="premise">You asked about ${esc(r.period.label)}, so this is the figure for that date, not the latest one. The latest figure in this prototype is shown below it.</p>`;
   h += `<h3 class="ans-title">${esc(dispTitle(p.title))}</h3><p class="${r.clarify ? "body" : "lead"}">${esc(p.text)}</p>`;
   if (p.derived) h += `<p class="calc-note"><span class="note-k">How it was calculated</span>${esc(p.derivation)}</p>`;
   h += factTable(p);
   h += `<dl class="meta"><div><dt>Data as of</dt><dd>${esc(p.asOf)}</dd></div><div><dt>Source document</dt><dd>${sourceBlock(p)}</dd></div>`
     + `<div><dt>Sources last checked</dt><dd>${esc(SOURCES_CHECKED)}</dd></div><div><dt>Status</dt><dd>${statusPill(p)}</dd></div></dl>`;
   if (p.status === "current" && !p.derived) h += `<p class="note small"><span class="note-k">What “latest” means here</span>This is the newest figure in this prototype’s documents, which were last checked for newer reports on ${esc(SOURCES_CHECKED)}. A newer report may exist. Check the source before you use the figure.</p>`;
+  if (r.latest) h += miniCard(r.latest, "For comparison");
   if (p.basis) h += `<p class="note"><span class="note-k">What the figure includes</span>${esc(p.basis)}</p>`;
   if (r.flag) h += `<p class="flag"><span class="note-k">Flag</span>${esc(r.flag)}</p>`;
   r.notes.forEach(n => { if (n) h += `<p class="flag"><span class="note-k">Note</span>${esc(n)}</p>`; });
@@ -71,7 +73,8 @@ const EXAMPLES = [
   ["Private sector 2025","How much did UNICEF raise from the private sector in 2025?"],
   ["What does $50 provide?","What does a $50 gift provide for families hit by the Nepal floods?"],
   ["Our NatCom’s total","How much has our National Committee raised for the Nepal floods appeal, and how do we compare with other National Committees?"],
-  ["Sudan vs Nepal gaps","Compare the funding gaps for Sudan and Nepal"]
+  ["Sudan vs Nepal gaps","Compare the funding gaps for Sudan and Nepal"],
+  ["Sudan gap in February","What was Sudan’s funding gap in February 2026?"]
 ];
 
 /* Crises */
@@ -189,18 +192,18 @@ function renderBrief(id){
 /* Evaluation */
 function renderEval(){
   const res = runEval(new Date()); const n = res.length;
-  const b = res.filter(r => r.bOk).length, s = res.filter(r => r.sOk).length;
+  const b = res.filter(r => r.bOk).length, s = res.filter(r => r.sOk).length, st = res.filter(r => r.strict).length;
   const types = ["Normal","T1 Stale","T2 No evidence","T3 Variant","T4 Definition","T5 Internal"];
   let h = `<header class="sec-h"><h2>Evaluation</h2><p class="muted">The 30 questions from the evaluation workbook, run live in this page.</p></header>`;
   h += `<div class="scores"><div class="score ${b === n ? "ok" : "bad"}"><div class="score-v">${b}<small> / ${n}</small></div><div class="score-l">Responses follow the expected behaviour</div></div>`
     + `<div class="score ${s === n ? "ok" : "bad"}"><div class="score-v">${s}<small> / ${n}</small></div><div class="score-l">Responses cite an expected source</div></div>`
-    + `<div class="score"><div class="score-v">${types.length}</div><div class="score-l">Question types, from routine figures to internal-only requests</div></div></div>`;
-  h += `<p class="flag"><span class="note-k">Read this first</span>This is a development set. The scope rules and cards were tuned on these questions, so the score shows the prototype works as designed, not how it handles new questions. A held-out set (your own questions and questions from interviews with fundraisers) will be scored before results are claimed. Figure accuracy and as-of dates are scored by hand in the workbook.</p>`;
-  h += `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Question type</th><th class="num">Questions</th><th class="num">Behaviour match</th><th class="num">Source match</th></tr></thead><tbody>`;
-  h += types.map(t => { const rs = res.filter(r => r.type === t); return `<tr><td><span class="typechip ${TYPECLS[t]}">${esc(t)}</span></td><td class="num">${rs.length}</td><td class="num">${rs.filter(r => r.bOk).length}</td><td class="num">${rs.filter(r => r.sOk).length}</td></tr>`; }).join("");
+    + `<div class="score ${st === n ? "ok" : "bad"}"><div class="score-v">${st}<small> / ${n}</small></div><div class="score-l">Strict: every figure in the gold answer shown, each from an expected document, with the right as-of date</div></div></div>`;
+  h += `<p class="flag"><span class="note-k">Read this first</span>This is a development set. The scope rules and cards were tuned on these questions, so the score shows the prototype works as designed, not how it handles new questions. A held-out set (your own questions and questions from interviews with fundraisers) will be scored before results are claimed. The strict check compares each answer with the figures in its gold answer: every figure must be shown, come from a card that cites an expected document, and carry the gold as-of date.</p>`;
+  h += `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Question type</th><th class="num">Questions</th><th class="num">Behaviour match</th><th class="num">Source match</th><th class="num">Strict</th></tr></thead><tbody>`;
+  h += types.map(t => { const rs = res.filter(r => r.type === t); return `<tr><td><span class="typechip ${TYPECLS[t]}">${esc(t)}</span></td><td class="num">${rs.length}</td><td class="num">${rs.filter(r => r.bOk).length}</td><td class="num">${rs.filter(r => r.sOk).length}</td><td class="num">${rs.filter(r => r.strict).length}</td></tr>`; }).join("");
   h += `</tbody></table></div>`;
-  h += `<h3 class="h3">All questions</h3><div class="tbl-wrap"><table class="tbl eval"><thead><tr><th>ID</th><th>Type</th><th>Question</th><th>Expected</th><th>Prototype</th><th>Behaviour</th><th>Source</th></tr></thead><tbody>`;
-  h += res.map(r => `<tr><td class="mono">${esc(r.id)}</td><td><span class="typechip ${TYPECLS[r.type]}">${esc(r.type)}</span></td><td><button class="linkish" data-q="${esc(r.q)}">${esc(r.q)}</button></td><td class="mono">${esc(r.exp)}</td><td class="mono">${esc(r.got)}</td><td>${r.bOk ? '<span class="ok-t">Match</span>' : '<span class="bad-t">Miss</span>'}</td><td>${r.sOk ? '<span class="ok-t">Match</span>' : '<span class="bad-t">Miss</span>'}</td></tr>`).join("");
+  h += `<h3 class="h3">All questions</h3><div class="tbl-wrap"><table class="tbl eval"><thead><tr><th>ID</th><th>Type</th><th>Question</th><th>Expected</th><th>Prototype</th><th>Behaviour</th><th>Source</th><th>Complete</th><th>Evidence</th><th>Date</th></tr></thead><tbody>`;
+  h += res.map(r => `<tr><td class="mono">${esc(r.id)}</td><td><span class="typechip ${TYPECLS[r.type]}">${esc(r.type)}</span></td><td><button class="linkish" data-q="${esc(r.q)}">${esc(r.q)}</button></td><td class="mono">${esc(r.exp)}</td><td class="mono">${esc(r.got)}</td><td>${r.bOk ? '<span class="ok-t">Match</span>' : '<span class="bad-t">Miss</span>'}</td><td>${r.sOk ? '<span class="ok-t">Match</span>' : '<span class="bad-t">Miss</span>'}</td>${[r.complete, r.evidenced, r.dated].map(v => `<td>${v ? '<span class="ok-t">Yes</span>' : '<span class="bad-t">No</span>'}</td>`).join("")}</tr>`).join("");
   h += `</tbody></table></div><p class="muted small">Select a question to open its full answer in Ask.</p>`;
   $("#eval-out").innerHTML = h;
 }

@@ -32,14 +32,15 @@ This prototype explores one way to deal with that. It is designed to sit on top 
 
 ## How it answers
 
-Every answer carries one of eight behaviours.
+Every answer carries one of nine behaviours.
 
 | Behaviour | When it is used | Example question |
 |---|---|---|
 | `ANSWER` | A current figure answers the question. | "Which five 2026 appeals have the largest funding requirements?" |
 | `ANSWER_CALC` | The answer needs a calculation from published figures. The formula and inputs are shown and labelled as a calculation. | "What share of UNICEF's 2026 global appeal is for Sudan?" |
 | `ANSWER_FLAG` | A current figure exists but needs a caveat: documents differ slightly, an update is overdue, or the figure belongs to another agency. | "What is the total 2026 funding requirement for Sudan?" |
-| `CORRECT_PREMISE` | The question quotes a figure that has been superseded. | "Our appeal page says the Sudan appeal is only 16% funded. Is that still right?" |
+| `CORRECT_PREMISE` | The question quotes a figure that has been superseded. The answer shows what the earlier source said and the latest figure. | "Our appeal page says the Sudan appeal is only 16% funded. Is that still right?" |
+| `ANSWER_PERIOD` | The question asks about one earlier month. The answer gives the figure for that month and shows the latest one beside it. | "What was Sudan's funding gap in February 2026?" |
 | `CLARIFY_DEFINITION` | The honest answer depends on which definition is meant. | "How much money has UNICEF received for Sudan this year?" |
 | `ABSTAIN` | The public documents hold no evidence for the claim, such as per-gift impact or a forecast. | "What does a $50 gift provide for families hit by the Nepal floods?" |
 | `REFUSE_ROUTE` | The answer is held in internal systems. The prototype says where to ask instead. | "Which photos and key messages are cleared for our Sudan campaign?" |
@@ -47,6 +48,7 @@ Every answer carries one of eight behaviours.
 
 ## How it works
 
+- **Read the question first.** Before a card is chosen, the prototype checks what is asked: one named month favours figures from that month (and a month with no figure is said so plainly), a calculated change between two dates cannot answer a question about one month, and "how many" or "how much" needs a card that holds figures. Any question about money "received" for Sudan gets the received/mobilised definition check.
 - **Fact cards, not whole documents.** The prototype searches 41 fact cards. Each card holds one figure or fact with its source document, page, as-of date and status. Cards about the same item form a group, and the group decides which figure is current.
 - **Keyword ranking (BM25)** with a light stemmer, synonyms and a stopword list. When a question names a crisis, cards from that crisis rank higher and cards from the other crisis lower; global cards are not affected.
 - **Premise check.** Numbers in the question are compared with the figures in the matching group. A number that matches a superseded figure but not the current one triggers a correction.
@@ -55,7 +57,7 @@ Every answer carries one of eight behaviours.
 - **Update checks.** A card can record when the next report is due, and the answer is flagged once that date has passed.
 - **"Latest" means latest in this prototype.** Each answer separates the date of the data, the date of the source document and the date the sources were last checked for newer reports (5 November 2026), because a newer report may have been published since.
 - **Questions about two crises** are answered once per crisis, so a partial answer cannot pass as a complete one.
-- **Scope rules** stop the prototype from answering four kinds of question that public documents cannot support: a National Committee's own campaign results, cleared messages and images, per-gift impact, and forecasts. The per-gift rule looks for what money buys ("What does a $50 gift provide?"), not for any amount, so "Is the Sudan appeal US$962.9 million?" is answered.
+- **Scope rules** stop the prototype from answering four kinds of question that public documents cannot support: a National Committee's own campaign results, cleared messages and images, per-gift impact, and forecasts. The per-gift rule looks for what money buys ("What does a $50 gift provide?"), not for an amount or the word "donation" on its own, so "Is the Sudan appeal US$962.9 million?" and "How much donation funding has UNICEF received for Sudan?" are answered. When a question is refused, the nearest fact shown is a published figure, not a calculation.
 - **No language model writes the answers** in this version. Every number shown comes from a card checked against its source.
 
 The logic is in [`src/engine.js`](src/engine.js) (data, search and answer rules) and the interface in [`src/ui.js`](src/ui.js).
@@ -78,10 +80,11 @@ Five reserve questions (R1 to R5) test the same behaviours with new questions. T
 |---|---|
 | Follows the expected behaviour | 30 of 30 |
 | Cites an expected source | 30 of 30 |
+| Strict: every figure in the gold answer shown, each from an expected document, with the gold as-of date | 30 of 30 |
 | Reserve questions: follows the expected behaviour | 5 of 5 |
-| Regression checks for issues found in review (6 November 2026) | 4 of 4 |
+| Regression checks for issues found in two reviews (6 November 2026) | 11 of 11 |
 
-**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. Figure accuracy and as-of dates are scored by hand in the workbook. The source check counts an answer as correct when it cites at least one expected source; it does not yet check that every part of the answer, every number and every date has its own source.
+**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. The source check counts an answer as correct when it cites at least one expected source. The strict check goes further: each question has a list of claims taken from its draft gold answer in [`eval/questions_v0.2.csv`](eval/questions_v0.2.csv), with the documents each claim must come from. An answer passes only if it has the expected behaviour, shows every claim, shows each claim from a card that cites one of that claim's documents, and carries the gold as-of date. The checker was tested by breaking answers on purpose (a missing figure, the wrong month, half an answer, a missing caveat, a figure credited to the wrong document); each one failed. The strict check reads figures as text, so it confirms what is shown, not that a sentence states it correctly; wording is still reviewed by hand in the workbook.
 
 Run the evaluation with `node eval/run_eval.js` (or `npm test`).
 
