@@ -1,25 +1,30 @@
-<header class="mast"><div class="wrap mast-in">
-  <div class="brand">
-    <p class="eyebrow">Prototype · Emergency fundraising knowledge</p>
-    <h1>Emergency Knowledge Finder</h1>
-    <p class="tag">Answers for fundraising teams from public appeals and situation reports. Every figure carries its source, page and as-of date.</p>
+<header class="band">
+  <div class="wrap band-in">
+    <div class="brand">
+      <p class="eyebrow band-eyebrow">Independent prototype · Emergency fundraising knowledge</p>
+      <h1>Emergency Knowledge Finder</h1>
+      <p class="tag">Answers for fundraising teams from public appeals and situation reports. Every figure carries its source, page and as-of date.</p>
+    </div>
+    <dl class="band-meta">
+      <div><dt>Data</dt><dd>Draft v0.2 · 5 Nov 2026</dd></div>
+      <div><dt>Coverage</dt><dd id="chip-meta"></dd></div>
+    </dl>
   </div>
-  <div class="mast-meta"><span class="chip">Draft data v0.2 · 5 Nov 2026</span><span class="chip" id="chip-meta"></span></div>
-</div></header>
-<nav class="wrap tabs" role="tablist" aria-label="Views">
-  <button class="tab" role="tab" id="tab-ask" data-view="ask" aria-controls="view-ask">Ask</button>
-  <button class="tab" role="tab" id="tab-crises" data-view="crises" aria-controls="view-crises">Crises</button>
-  <button class="tab" role="tab" id="tab-brief" data-view="brief" aria-controls="view-brief">72-hour brief</button>
-  <button class="tab" role="tab" id="tab-evaluation" data-view="evaluation" aria-controls="view-evaluation">Evaluation</button>
-  <button class="tab" role="tab" id="tab-sources" data-view="sources" aria-controls="view-sources">Sources and method</button>
-</nav>
+  <nav class="wrap tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" id="tab-ask" data-view="ask" aria-controls="view-ask">Ask</button>
+    <button class="tab" role="tab" id="tab-crises" data-view="crises" aria-controls="view-crises">Crises</button>
+    <button class="tab" role="tab" id="tab-brief" data-view="brief" aria-controls="view-brief">72-hour brief</button>
+    <button class="tab" role="tab" id="tab-evaluation" data-view="evaluation" aria-controls="view-evaluation">Evaluation</button>
+    <button class="tab" role="tab" id="tab-sources" data-view="sources" aria-controls="view-sources">Sources and method</button>
+  </nav>
+</header>
 <main class="wrap">
   <section id="view-ask" role="tabpanel" aria-labelledby="tab-ask">
     <form id="ask-form" class="ask" autocomplete="off">
       <label for="q" class="lbl">Ask a question a fundraiser would ask</label>
-      <div class="ask-row"><input id="q" name="q" type="text" placeholder="For example: What is the latest funding status of the Sudan appeal?"><button type="submit" class="btn">Ask</button></div>
+      <div class="ask-row"><input id="q" name="q" type="text" placeholder="For example: What is the latest funding status of the Sudan appeal?"><button type="submit" class="btn">Find the answer</button></div>
+      <div class="chips-wrap"><span class="chips-k">Try</span><div class="chips" aria-label="Example questions"></div></div>
     </form>
-    <div class="chips" aria-label="Example questions"></div>
     <div id="answer" aria-live="polite"></div>
   </section>
   <section id="view-crises" role="tabpanel" aria-labelledby="tab-crises" hidden>

@@ -23,7 +23,7 @@ function traceHtml(r){
 }
 function renderAnswer(q){
   const r = answer(q); const b = BEH[r.behaviour];
-  let h = `<article class="answer"><div class="ans-top">${pill(b[0], b[1])}<span class="q-echo">${esc(q)}</span></div>`;
+  let h = `<article class="answer"><div class="ans-top ${b[0]}"><span class="ans-k">${esc(b[1])}</span><span class="q-echo">${esc(q)}</span></div><div class="ans-body">`;
   if (r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE"){
     h += `<p class="lead">${esc(r.rule.msg)}</p><p class="note"><span class="note-k">Where to go</span>${esc(r.rule.route)}</p>`;
     if (r.near) h += miniCard(r.near, "Nearest verified fact");
@@ -42,7 +42,7 @@ function renderAnswer(q){
     r.variants.forEach(c => { h += miniCard(c, "Variant"); });
     if (r.history.length) h += `<details class="hist"><summary>Earlier figures (${r.history.length})</summary>${r.history.map(c => miniCard(c)).join("")}</details>`;
   }
-  h += `<details class="trace"><summary>How this answer was found</summary>${traceHtml(r)}</details></article>`;
+  h += `<details class="trace"><summary>How this answer was found</summary>${traceHtml(r)}</details></div></article>`;
   $("#answer").innerHTML = h;
 }
 const EXAMPLES = [
@@ -59,24 +59,44 @@ const EXAMPLES = [
 
 /* Crises */
 const CRISES = {
-  sudan:{name:"Sudan", sub:"Protracted conflict · 2026 requirement US$962.9M", current:["S1","S10","S3","S4","S11","S16"],
+  sudan:{name:"Sudan", sub:"Protracted conflict · 2026 requirement US$962.9M",
+    figs:[["US$962.9M","2026 funding requirement","S1"],["17.3M","Children in need of humanitarian assistance","S3"],["7.9M","Children UNICEF aims to reach in 2026","S4"],["63%","Appeal funding gap","S10"]],
+    fund:{card:"S10", title:"Funds mobilised against the 2026 appeal", part:352.2, total:962.9, partLabel:"US$352.2M mobilised (37%)", gapLabel:"US$610.7M gap (63%)", totalLabel:"Requirement US$962.9M"}, current:["S1","S10","S3","S4","S11","S16"],
     hist:{title:"Funds mobilised against the 2026 appeal", cols:["As of","Mobilised","Gap","What the total includes","Source"],
       rows:[["28 Feb 2026","US$149.9M","84%","US$22.8M received in 2026 + US$127.1M carried forward","D04"],["30 Apr 2026","US$191.3M","80% (US$771.6M)","Breakdown not yet extracted","D06"],["30 Jun 2026","US$351.1M","64% (US$611.8M)","US$96.4M received + US$127.6M other resources + US$127.1M carried forward","D08"],["31 Jul 2026","US$352.2M","63%","Breakdown not yet extracted","D09"],["31 Aug 2026","US$352.2M","63% (US$610.7M)","US$97.5M received + US$127.6M other resources + US$127.1M carried forward","D10"]],
       note:"Between 30 June and 31 August, total funds mobilised rose by about US$1.1M (calculated from Reports No. 44 and No. 46)."},
     flags:["S1v","S16v"], next:"Report No. 46 (August) was published on 28 October 2026. Check for Report No. 47 before using these figures."},
-  nepal:{name:"Nepal floods 2026", sub:"Sudden onset · flash floods from 26 August 2026 · requirement US$17.2M", current:["N1","N5","N9","N6","N7"],
+  nepal:{name:"Nepal floods 2026", sub:"Sudden onset · flash floods from 26 August 2026 · requirement US$17.2M",
+    figs:[["32,021","Children affected","N5"],["84,270","People affected","N5"],["1,458","Deaths","N5"],["5,285","People missing, including 195 children","N5"]],
+    fund:{card:"N6", title:"Funds received against the appeal", part:8776695, total:17243050, partLabel:"US$8.78M received (51%)", gapLabel:"US$8.47M gap (49%)", totalLabel:"Requirement US$17.24M"}, current:["N1","N5","N9","N6","N7"],
     hist:{title:"How the impact figures changed", cols:["As of","Children affected","Deaths","Missing","Source"],
       rows:[["27 Aug 2026","At least 17,000","About 332","Hundreds","D11"],["31 Aug 2026","22,100","903","About 4,247","D12"],["9 Oct 2026","32,021","1,458","5,285","D18"]],
       note:"Deaths reported on 9 October were more than four times the figure in the first press release (calculated)."},
     flags:[], cadence:"N8"},
-  global:{name:"Global and PFP", sub:"HAC 2026 and private sector results for 2025", current:["G1","G3","G6","G7","G8","G9","G5"],
+  global:{name:"Global and PFP", sub:"HAC 2026 and private sector results for 2025",
+    figs:[["US$7.66B","Global 2026 humanitarian appeal","G1"],["73M","Children UNICEF aims to reach","G1"],["117M","People UNICEF aims to reach","G1"],["133","Countries and territories","G1"]], current:["G1","G3","G6","G7","G8","G9","G5"],
     hist:{title:"Ten largest 2026 appeals", cols:["Appeal","Requirement"], fromFacts:"G4", note:"The Democratic Republic of the Congo figure is marked preliminary in the source."},
     flags:[]}
 };
+function situationHtml(c){
+  const latest = c.figs.map(f => CARD[f[2]]).sort((a, b) => b.d.localeCompare(a.d))[0];
+  let h = `<section class="sin" aria-label="Situation in numbers"><div class="sin-h"><h3>Situation in numbers</h3><span class="muted small">Latest as of ${esc(latest.asOf)}</span></div><div class="figs">`;
+  h += c.figs.map(([v, l, id]) => { const x = CARD[id]; return `<div class="fig"><div class="fig-v">${esc(v)}</div><p class="fig-l">${esc(l)}</p><div class="fig-s"><span>${esc(x.asOf)}</span>${docsOf(x).map(refLink).join(" ")}</div></div>`; }).join("");
+  h += `</div>`;
+  const f = c.fund;
+  if (f){
+    const pct = Math.round(f.part / f.total * 1000) / 10; const x = CARD[f.card];
+    h += `<div class="fund"><div class="fund-h"><strong>${esc(f.title)}</strong><span class="muted small">${esc(f.totalLabel)} · as of ${esc(x.asOf)} ${docsOf(x).map(refLink).join(" ")}</span></div>`
+      + `<div class="bar" role="img" aria-label="${esc(f.partLabel)}; ${esc(f.gapLabel)}"><span style="width:${pct}%"></span></div>`
+      + `<div class="bar-legend"><span><i class="k k-fill"></i>${esc(f.partLabel)}</span><span><i class="k k-gap"></i>${esc(f.gapLabel)}</span></div></div>`;
+  }
+  return h + `</section>`;
+}
 function renderCrisis(key){
   const c = CRISES[key] || CRISES.sudan;
   $$(".seg-crisis button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === key)));
   let h = `<header class="sec-h"><h2>${esc(c.name)}</h2><p class="muted">${esc(c.sub)}</p></header>`;
+  h += situationHtml(c);
   h += `<h3 class="h3">Current figures</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Figure</th><th>As of</th><th>Source</th></tr></thead><tbody>`;
   h += c.current.map(id => { const x = CARD[id]; return `<tr><th scope="row">${esc(x.title)}</th><td>${esc(x.text)}${x.flag ? `<div class="cell-flag">${esc(x.flag)}</div>` : ""}</td><td class="nowrap">${esc(x.asOf)}</td><td class="nowrap">${docsOf(x).map(refLink).join(" ")}</td></tr>`; }).join("");
   h += `</tbody></table></div>`;
@@ -107,24 +127,24 @@ let briefText = "";
 function renderBrief(id){
   const v = BRIEF.find(x => x.id === id) || BRIEF[BRIEF.length - 1];
   $$(".seg-brief button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === v.id)));
-  let h = `<article class="brief"><p class="eyebrow">Knowledge brief for fundraising teams · ${esc(v.label)}</p><h2 class="brief-h">Nepal floods 2026</h2>`
+  let h = `<article class="brief"><div class="brief-top"><p class="eyebrow">Knowledge brief for fundraising teams · ${esc(v.label)}</p><span class="stamp">Draft · not cleared</span></div><h2 class="brief-h">Nepal floods 2026</h2>`
     + `<p class="brief-asof">Figures as of ${esc(v.asOf)}. Draft for internal clearance, not approved messaging.</p>`;
   const lines = [`Nepal floods 2026: knowledge brief (${v.label})`, `Figures as of ${v.asOf}. Draft for internal clearance, not approved messaging.`, ""];
   v.sections.forEach(([t, cid]) => {
     const c = CARD[cid];
-    h += `<section class="b-sec"><h3>${esc(t)}</h3><p>${esc(c.text)} ${docsOf(c).map(refLink).join(" ")}</p>${factTable(c)}`
-      + `${c.basis ? `<p class="b-note">${esc(c.basis)}</p>` : ""}${c.flag ? `<p class="b-flag">${esc(c.flag)}</p>` : ""}</section>`;
+    h += `<section class="b-sec"><h3>${esc(t)}</h3><div><p>${esc(c.text)} ${docsOf(c).map(refLink).join(" ")}</p>${factTable(c)}`
+      + `${c.basis ? `<p class="b-note">${esc(c.basis)}</p>` : ""}${c.flag ? `<p class="b-flag">${esc(c.flag)}</p>` : ""}</div></section>`;
     lines.push(t.toUpperCase(), `${c.text} [${docsOf(c).join(", ")}]`);
     (c.facts || []).forEach(f => lines.push(`- ${f[0]}: ${f[1]}`));
     if (c.flag) lines.push(`Note: ${c.flag}`);
     lines.push("");
   });
   if (v.changes.length){
-    h += `<section class="b-sec"><h3>What changed since the previous version</h3><ul class="list">${v.changes.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>`;
+    h += `<section class="b-sec"><h3>What changed</h3><div><ul class="list">${v.changes.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></section>`;
     lines.push("WHAT CHANGED SINCE THE PREVIOUS VERSION", ...v.changes.map(x => `- ${x}`), "");
   }
   const used = [...new Set(v.sections.flatMap(([, cid]) => docsOf(CARD[cid])))];
-  h += `<section class="b-sec"><h3>Sources</h3><ul class="list">${used.map(d => `<li>${refLink(d)} ${esc(DOCS[d].t)} (${esc(DOCS[d].pub)})</li>`).join("")}</ul></section></article>`;
+  h += `<section class="b-sec"><h3>Sources</h3><div><ul class="list">${used.map(d => `<li>${refLink(d)} ${esc(DOCS[d].t)} (${esc(DOCS[d].pub)})</li>`).join("")}</ul></div></section></article>`;
   lines.push("SOURCES", ...used.map(d => `[${d}] ${DOCS[d].t} (${DOCS[d].pub}) ${DOCS[d].url}`));
   briefText = lines.join("\n");
   $("#brief-out").innerHTML = h;
@@ -137,7 +157,9 @@ function renderEval(){
   const b = res.filter(r => r.bOk).length, s = res.filter(r => r.sOk).length;
   const types = ["Normal","T1 Stale","T2 No evidence","T3 Variant","T4 Definition","T5 Internal"];
   let h = `<header class="sec-h"><h2>Evaluation</h2><p class="muted">The 30 questions from the evaluation workbook, run live in this page.</p></header>`;
-  h += `<p class="eval-sum"><strong>${b} of ${n}</strong> responses follow the expected behaviour. <strong>${s} of ${n}</strong> cite an expected source.</p>`;
+  h += `<div class="scores"><div class="score ${b === n ? "ok" : "bad"}"><div class="score-v">${b}<small> / ${n}</small></div><div class="score-l">Responses follow the expected behaviour</div></div>`
+    + `<div class="score ${s === n ? "ok" : "bad"}"><div class="score-v">${s}<small> / ${n}</small></div><div class="score-l">Responses cite an expected source</div></div>`
+    + `<div class="score"><div class="score-v">${types.length}</div><div class="score-l">Question types, from routine figures to internal-only requests</div></div></div>`;
   h += `<p class="flag"><span class="note-k">Read this first</span>This is a development set. The scope rules and cards were tuned on these questions, so the score shows the prototype works as designed, not how it handles new questions. A held-out set (your own questions and questions from interviews with fundraisers) will be scored before results are claimed. Figure accuracy and as-of dates are scored by hand in the workbook.</p>`;
   h += `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Question type</th><th class="num">Questions</th><th class="num">Behaviour match</th><th class="num">Source match</th></tr></thead><tbody>`;
   h += types.map(t => { const rs = res.filter(r => r.type === t); return `<tr><td><span class="typechip ${TYPECLS[t]}">${esc(t)}</span></td><td class="num">${rs.length}</td><td class="num">${rs.filter(r => r.bOk).length}</td><td class="num">${rs.filter(r => r.sOk).length}</td></tr>`; }).join("");
@@ -169,7 +191,7 @@ function show(view){
   VIEWS.forEach(v => { $("#view-" + v).hidden = v !== view; const t = $(`.tab[data-view="${v}"]`); t.setAttribute("aria-selected", String(v === view)); t.tabIndex = v === view ? 0 : -1; });
 }
 function init(){
-  $("#chip-meta").textContent = `${INDEX.n} fact cards · ${Object.keys(DOCS).length} documents`;
+  $("#chip-meta").textContent = `${INDEX.n} fact cards · ${Object.keys(DOCS).length} documents · 2 crises`;
   $(".chips").innerHTML = EXAMPLES.map(([l, q]) => `<button type="button" data-q="${esc(q)}" title="${esc(q)}">${esc(l)}</button>`).join("");
   $("#q").value = EXAMPLES[0][1];
   renderAnswer(EXAMPLES[0][1]);
