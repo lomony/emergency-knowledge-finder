@@ -1,0 +1,15 @@
+{
+  "name": "emergency-knowledge-finder",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Prototype search and governance layer for emergency fundraising figures, built from public UNICEF documents.",
+  "author": "Jeerana Noymanee",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node eval/run_eval.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

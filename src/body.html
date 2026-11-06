@@ -1,0 +1,51 @@
+<header class="mast"><div class="wrap mast-in">
+  <div class="brand">
+    <p class="eyebrow">Prototype · Emergency fundraising knowledge</p>
+    <h1>Emergency Knowledge Finder</h1>
+    <p class="tag">Answers for fundraising teams from public appeals and situation reports. Every figure carries its source, page and as-of date.</p>
+  </div>
+  <div class="mast-meta"><span class="chip">Draft data v0.2 · 5 Nov 2026</span><span class="chip" id="chip-meta"></span></div>
+</div></header>
+<nav class="wrap tabs" role="tablist" aria-label="Views">
+  <button class="tab" role="tab" id="tab-ask" data-view="ask" aria-controls="view-ask">Ask</button>
+  <button class="tab" role="tab" id="tab-crises" data-view="crises" aria-controls="view-crises">Crises</button>
+  <button class="tab" role="tab" id="tab-brief" data-view="brief" aria-controls="view-brief">72-hour brief</button>
+  <button class="tab" role="tab" id="tab-evaluation" data-view="evaluation" aria-controls="view-evaluation">Evaluation</button>
+  <button class="tab" role="tab" id="tab-sources" data-view="sources" aria-controls="view-sources">Sources and method</button>
+</nav>
+<main class="wrap">
+  <section id="view-ask" role="tabpanel" aria-labelledby="tab-ask">
+    <form id="ask-form" class="ask" autocomplete="off">
+      <label for="q" class="lbl">Ask a question a fundraiser would ask</label>
+      <div class="ask-row"><input id="q" name="q" type="text" placeholder="For example: What is the latest funding status of the Sudan appeal?"><button type="submit" class="btn">Ask</button></div>
+    </form>
+    <div class="chips" aria-label="Example questions"></div>
+    <div id="answer" aria-live="polite"></div>
+  </section>
+  <section id="view-crises" role="tabpanel" aria-labelledby="tab-crises" hidden>
+    <div class="seg seg-crisis" role="group" aria-label="Crisis">
+      <button type="button" data-k="sudan" aria-pressed="true">Sudan</button>
+      <button type="button" data-k="nepal" aria-pressed="false">Nepal floods</button>
+      <button type="button" data-k="global" aria-pressed="false">Global and PFP</button>
+    </div>
+    <div id="crisis-out"></div>
+  </section>
+  <section id="view-brief" role="tabpanel" aria-labelledby="tab-brief" hidden>
+    <div class="brief-bar">
+      <div class="seg seg-brief" role="group" aria-label="Brief version">
+        <button type="button" data-k="v1" aria-pressed="false">v1 · 29 Aug</button>
+        <button type="button" data-k="v2" aria-pressed="false">v2 · 31 Aug</button>
+        <button type="button" data-k="v3" aria-pressed="true">v3 · 13 Oct</button>
+      </div>
+      <button type="button" id="copy-brief" class="btn ghost">Copy brief text</button>
+      <span id="copy-status" class="muted small" aria-live="polite"></span>
+    </div>
+    <div id="brief-out"></div>
+  </section>
+  <section id="view-evaluation" role="tabpanel" aria-labelledby="tab-evaluation" hidden><div id="eval-out"></div></section>
+  <section id="view-sources" role="tabpanel" aria-labelledby="tab-sources" hidden><div id="sources-out"></div></section>
+</main>
+<footer class="foot"><div class="wrap">
+  <span>Prototype by Jeerana Noymanee <span class="clefs" role="img" aria-label="treble clef and bass clef">𝄞𝄢</span></span>
+  <span>Independent prototype built on public documents. Not affiliated with, endorsed by or reviewed by UNICEF.</span>
+</div></footer>

@@ -1,0 +1,20 @@
+name: Evaluation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run the evaluation set
+        run: node eval/run_eval.js
+      - name: Check that docs/index.html is built from the current src/
+        run: |
+          node scripts/build.js
+          git diff --exit-code docs/index.html

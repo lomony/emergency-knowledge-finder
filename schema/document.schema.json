@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/lomony/emergency-knowledge-finder/schema/document.schema.json",
+  "title": "Document register entry",
+  "description": "One source document in the corpus (v0.2).",
+  "type": "object",
+  "properties": {
+    "doc_id": {
+      "type": "string",
+      "description": "Unique ID",
+      "examples": [
+        "D10"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "description": "As published",
+      "examples": [
+        "UNICEF Sudan Humanitarian Situation Report No. 46 (1 to 31 August 2026)"
+      ]
+    },
+    "doc_type": {
+      "type": "string",
+      "enum": [
+        "hac_overview",
+        "hac_country_appeal",
+        "situation_report",
+        "press_release",
+        "funding_report",
+        "board_document",
+        "policy_framework",
+        "secondary_page"
+      ],
+      "description": "From Controlled lists",
+      "examples": [
+        "situation_report"
+      ]
+    },
+    "publisher": {
+      "type": "string",
+      "description": "Issuing office",
+      "examples": [
+        "UNICEF Sudan Country Office"
+      ]
+    },
+    "crisis_id": {
+      "type": "string",
+      "enum": [
+        "GLB-2026",
+        "SDN-2026",
+        "NPL-FL-2026"
+      ],
+      "description": "From Controlled lists",
+      "examples": [
+        "SDN-2026"
+      ]
+    },
+    "country_iso3": {
+      "type": "string",
+      "description": "ISO 3166-1 alpha-3",
+      "examples": [
+        "SDN"
+      ]
+    },
+    "sequence_no": {
+      "type": "string",
+      "description": "Report number in a series",
+      "examples": [
+        "46"
+      ]
+    },
+    "publication_date": {
+      "type": "string",
+      "format": "date",
+      "description": "",
+      "examples": [
+        "2026-10-28"
+      ]
+    },
+    "reporting_period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date covered",
+      "examples": [
+        "2026-08-31"
+      ]
+    },
+    "language": {
+      "type": "string",
+      "description": "ISO 639-1",
+      "examples": [
+        "en"
+      ]
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Canonical URL on the publisher's site",
+      "examples": [
+        "See Corpus plan"
+      ]
+    },
+    "retrieved_on": {
+      "type": "string",
+      "format": "date",
+      "description": "Date downloaded",
+      "examples": [
+        "Set at corpus pull"
+      ]
+    },
+    "file_sha256": {
+      "type": "string",
+      "description": "Hash of the downloaded file, for version control",
+      "examples": [
+        "Computed at corpus pull"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "current",
+        "superseded",
+        "archived"
+      ],
+      "description": "current, superseded or archived",
+      "examples": [
+        "current"
+      ]
+    },
+    "superseded_by": {
+      "type": "string",
+      "description": "doc_id of the newer document",
+      "examples": [
+        "Blank until Report No. 47"
+      ]
+    },
+    "source_of_record_for": {
+      "type": "string",
+      "description": "Metric families this document is the authority for",
+      "examples": [
+        "Funding status; results; situation in numbers"
+      ]
+    },
+    "content_owner_role": {
+      "type": "string",
+      "description": "A role, not a person: the publisher for public documents; the curator in an internal deployment",
+      "examples": [
+        "Publisher: UNICEF Sudan Country Office. Curator (internal deployment): PFP Emergency Fundraising Unit"
+      ]
+    },
+    "review_trigger": {
+      "type": "string",
+      "description": "What prompts a review",
+      "examples": [
+        "New situation report"
+      ]
+    },
+    "licence_terms": {
+      "type": "string",
+      "description": "Reuse terms that apply",
+      "examples": [
+        "UNICEF website terms (personal and educational use); link only"
+      ]
+    },
+    "contains_personal_data": {
+      "type": "boolean",
+      "description": "",
+      "examples": [
+        false
+      ]
+    },
+    "public_repo_policy": {
+      "type": "string",
+      "enum": [
+        "link_only",
+        "metadata_only"
+      ],
+      "description": "link_only or metadata_only",
+      "examples": [
+        "link_only"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "required": [
+    "doc_id",
+    "title",
+    "doc_type",
+    "publisher",
+    "publication_date",
+    "language",
+    "source_url",
+    "retrieved_on",
+    "file_sha256",
+    "status",
+    "content_owner_role",
+    "review_trigger",
+    "licence_terms",
+    "contains_personal_data",
+    "public_repo_policy"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,246 @@
+{
+  "doc_type": [
+    {
+      "term": "hac_overview",
+      "definition": "Global Humanitarian Action for Children overview"
+    },
+    {
+      "term": "hac_country_appeal",
+      "definition": "Country or regional HAC appeal"
+    },
+    {
+      "term": "situation_report",
+      "definition": "Humanitarian situation report (monthly or event-driven)"
+    },
+    {
+      "term": "press_release",
+      "definition": "UNICEF press release"
+    },
+    {
+      "term": "funding_report",
+      "definition": "Funding Compendium or similar annual funding report"
+    },
+    {
+      "term": "board_document",
+      "definition": "Executive Board document or briefing"
+    },
+    {
+      "term": "policy_framework",
+      "definition": "Policy or standard, for example the CCCs"
+    },
+    {
+      "term": "secondary_page",
+      "definition": "Index pages, web summaries, partner pages"
+    }
+  ],
+  "metric_type: funding": [
+    {
+      "term": "requirement_total",
+      "definition": "Total funding requirement of an appeal"
+    },
+    {
+      "term": "requirement_sector",
+      "definition": "Requirement for one sector within an appeal"
+    },
+    {
+      "term": "mobilised_total",
+      "definition": "Funds mobilised against the appeal; in UNICEF situation reports this can combine current-year receipts, other resources used and carry-over"
+    },
+    {
+      "term": "received_current_year",
+      "definition": "Humanitarian resources received in the appeal year"
+    },
+    {
+      "term": "other_resources_used",
+      "definition": "Other resources used for the appeal in the year"
+    },
+    {
+      "term": "carry_over_prior_year",
+      "definition": "Funds carried forward from the previous year"
+    },
+    {
+      "term": "funding_gap",
+      "definition": "Requirement minus funds mobilised (unit: USD or percent)"
+    },
+    {
+      "term": "epf_loan",
+      "definition": "Emergency Programme Fund loan; record whether a funding figure includes it"
+    }
+  ],
+  "metric_type: people and impact": [
+    {
+      "term": "people_in_need / children_in_need",
+      "definition": "From the inter-agency plan cited by the document (for example the HNRP)"
+    },
+    {
+      "term": "people_to_be_reached / children_to_be_reached",
+      "definition": "UNICEF's planned reach in the appeal"
+    },
+    {
+      "term": "people_affected / children_affected",
+      "definition": "Estimated affected population for a sudden-onset event"
+    },
+    {
+      "term": "deaths / missing",
+      "definition": "As reported by authorities and cited in the document"
+    },
+    {
+      "term": "idps",
+      "definition": "Internally displaced people (usually cites IOM DTM)"
+    }
+  ],
+  "metric_type: results": [
+    {
+      "term": "result_cumulative",
+      "definition": "Cumulative result for an indicator over the reporting period"
+    },
+    {
+      "term": "target",
+      "definition": "Annual target for an indicator"
+    }
+  ],
+  "metric_type: organisational": [
+    {
+      "term": "income_total",
+      "definition": "UNICEF total income in a year (Funding Compendium)"
+    },
+    {
+      "term": "income_private_sector",
+      "definition": "Private sector income as reported in the Funding Compendium"
+    },
+    {
+      "term": "private_sector_revenue",
+      "definition": "Revenue raised by the private sector fundraising network as reported by PFP"
+    }
+  ],
+  "qualifier": [
+    {
+      "term": "exact",
+      "definition": ""
+    },
+    {
+      "term": "at_least",
+      "definition": "'at least'"
+    },
+    {
+      "term": "more_than",
+      "definition": "'more than'"
+    },
+    {
+      "term": "approximately",
+      "definition": "'about', 'some'"
+    },
+    {
+      "term": "preliminary",
+      "definition": "Marked preliminary by the source"
+    },
+    {
+      "term": "estimate",
+      "definition": "Marked as an estimate by the source"
+    }
+  ],
+  "status (figure)": [
+    {
+      "term": "current",
+      "definition": ""
+    },
+    {
+      "term": "superseded",
+      "definition": "Replaced by a newer as-of figure; kept for audit"
+    },
+    {
+      "term": "variant",
+      "definition": "Differs from the source of record for the same metric and date"
+    }
+  ],
+  "status (document)": [
+    {
+      "term": "current",
+      "definition": ""
+    },
+    {
+      "term": "superseded",
+      "definition": "A newer document replaces it for current answers"
+    },
+    {
+      "term": "archived",
+      "definition": "Kept for audit only"
+    }
+  ],
+  "authority_rank": [
+    {
+      "term": "1",
+      "definition": "Appeal document (HAC country appeal or overview)"
+    },
+    {
+      "term": "2",
+      "definition": "Situation report"
+    },
+    {
+      "term": "3",
+      "definition": "Press release"
+    },
+    {
+      "term": "4",
+      "definition": "Secondary page (index, web summary, partner page)"
+    }
+  ],
+  "crisis_id": [
+    {
+      "term": "GLB-2026",
+      "definition": "Global HAC 2026 and organisation-wide figures"
+    },
+    {
+      "term": "SDN-2026",
+      "definition": "Sudan appeal 2026"
+    },
+    {
+      "term": "NPL-FL-2026",
+      "definition": "Nepal floods, onset 26 August 2026"
+    }
+  ],
+  "persona": [
+    {
+      "term": "NC-DIG",
+      "definition": "National Committee emergency and digital fundraiser"
+    },
+    {
+      "term": "NC-PART",
+      "definition": "National Committee partnerships manager"
+    },
+    {
+      "term": "CO-PSFR",
+      "definition": "Country office private sector fundraiser"
+    },
+    {
+      "term": "PFP-EF",
+      "definition": "PFP Emergency Fundraising Unit coordinator"
+    }
+  ],
+  "task_moment": [
+    {
+      "term": "Onset (0-72h)",
+      "definition": ""
+    },
+    {
+      "term": "Appeal & gap",
+      "definition": ""
+    },
+    {
+      "term": "Donor pitch",
+      "definition": ""
+    },
+    {
+      "term": "Report-back",
+      "definition": ""
+    },
+    {
+      "term": "Context & priorities",
+      "definition": ""
+    },
+    {
+      "term": "Governance",
+      "definition": ""
+    }
+  ]
+}

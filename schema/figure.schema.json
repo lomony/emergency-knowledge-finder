@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/lomony/emergency-knowledge-finder/schema/figure.schema.json",
+  "title": "Figure record",
+  "description": "One published figure with its source, as-of date and status (v0.2).",
+  "type": "object",
+  "properties": {
+    "figure_id": {
+      "type": "string",
+      "description": "Unique ID: crisis, metric and as-of date",
+      "examples": [
+        "SDN-2026-GAP-20260831"
+      ]
+    },
+    "crisis_id": {
+      "type": "string",
+      "enum": [
+        "GLB-2026",
+        "SDN-2026",
+        "NPL-FL-2026"
+      ],
+      "description": "Crisis or appeal code from Controlled lists",
+      "examples": [
+        "SDN-2026"
+      ]
+    },
+    "country_iso3": {
+      "type": "string",
+      "description": "ISO 3166-1 alpha-3 code; GLB for global figures",
+      "examples": [
+        "SDN"
+      ]
+    },
+    "glide_number": {
+      "type": "string",
+      "description": "GLIDE disaster number, where one exists"
+    },
+    "appeal_year": {
+      "type": "integer",
+      "description": "HAC year the figure belongs to",
+      "examples": [
+        2026
+      ]
+    },
+    "metric_type": {
+      "type": "string",
+      "enum": [
+        "requirement_total",
+        "requirement_sector",
+        "mobilised_total",
+        "received_current_year",
+        "other_resources_used",
+        "carry_over_prior_year",
+        "funding_gap",
+        "epf_loan",
+        "people_in_need",
+        "children_in_need",
+        "people_to_be_reached",
+        "children_to_be_reached",
+        "people_affected",
+        "children_affected",
+        "deaths",
+        "missing",
+        "idps",
+        "result_cumulative",
+        "target",
+        "income_total",
+        "income_private_sector",
+        "private_sector_revenue"
+      ],
+      "description": "From Controlled lists",
+      "examples": [
+        "funding_gap"
+      ]
+    },
+    "value": {
+      "type": "number",
+      "description": "Value exactly as published, unrounded where the source gives it",
+      "examples": [
+        610650086
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "USD",
+        "people",
+        "children",
+        "households",
+        "percent",
+        "count"
+      ],
+      "description": "USD, people, children, households, percent or count",
+      "examples": [
+        "USD"
+      ]
+    },
+    "qualifier": {
+      "type": "string",
+      "enum": [
+        "exact",
+        "at_least",
+        "more_than",
+        "approximately",
+        "preliminary",
+        "estimate"
+      ],
+      "description": "exact, at_least, more_than, approximately, preliminary or estimate",
+      "examples": [
+        "exact"
+      ]
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the figure describes",
+      "examples": [
+        "2026-08-31"
+      ]
+    },
+    "reporting_period": {
+      "type": "string",
+      "description": "Period covered, for cumulative figures",
+      "examples": [
+        "2026-01-01 to 2026-08-31"
+      ]
+    },
+    "publication_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the source document was published",
+      "examples": [
+        "2026-10-28"
+      ]
+    },
+    "source_doc_id": {
+      "type": "string",
+      "description": "Link to the Corpus plan / document register",
+      "examples": [
+        "D10"
+      ]
+    },
+    "source_location": {
+      "type": "string",
+      "description": "Page, section or table",
+      "examples": [
+        "p.11, Annex B"
+      ]
+    },
+    "source_quote": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Verbatim text from the source, 300 characters at most",
+      "examples": [
+        "leaving a funding gap of US$610.7 million (63 per cent)"
+      ]
+    },
+    "underlying_source": {
+      "type": "string",
+      "description": "Original data provider cited by the document (for example HNRP, IOM DTM, NDRRMA)",
+      "examples": [
+        "UNICEF financial reporting"
+      ]
+    },
+    "calculation_basis": {
+      "type": "string",
+      "description": "What the figure includes and excludes Required: Yes for funding metrics.",
+      "examples": [
+        "Requirement minus funds mobilised (received in 2026 + other resources used in 2026 + carry-over from 2025)"
+      ]
+    },
+    "is_derived": {
+      "type": "boolean",
+      "description": "Yes if we calculated it rather than the document stating it",
+      "examples": [
+        false
+      ]
+    },
+    "derivation": {
+      "type": "string",
+      "description": "Formula and input figure_ids Required: If derived."
+    },
+    "source_of_record": {
+      "type": "boolean",
+      "description": "Yes if this document is the authority for this metric (see Source-of-record rules)",
+      "examples": [
+        true
+      ]
+    },
+    "authority_rank": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "1 appeal document, 2 situation report, 3 press release, 4 secondary page",
+      "examples": [
+        2
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "current",
+        "superseded",
+        "variant"
+      ],
+      "description": "current, superseded or variant",
+      "examples": [
+        "current"
+      ]
+    },
+    "supersedes": {
+      "type": "string",
+      "description": "figure_id of the record this one replaces",
+      "examples": [
+        "SDN-2026-GAP-20260731"
+      ]
+    },
+    "conflict_group_id": {
+      "type": "string",
+      "description": "Groups records that give different values for the same metric and date"
+    },
+    "conflict_note": {
+      "type": "string",
+      "description": "Neutral description of the difference Required: If in a conflict group."
+    },
+    "extraction_method": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "ai_assisted"
+      ],
+      "description": "manual or ai_assisted",
+      "examples": [
+        "ai_assisted"
+      ]
+    },
+    "verified_by": {
+      "type": "string",
+      "description": "Initials of the person who checked the figure against the source Required: Before freeze.",
+      "examples": [
+        "JN"
+      ]
+    },
+    "verified_on": {
+      "type": "string",
+      "format": "date",
+      "description": "Date checked Required: Before freeze.",
+      "examples": [
+        "2026-11-07"
+      ]
+    }
+  },
+  "required": [
+    "figure_id",
+    "crisis_id",
+    "country_iso3",
+    "appeal_year",
+    "metric_type",
+    "value",
+    "unit",
+    "qualifier",
+    "as_of_date",
+    "publication_date",
+    "source_doc_id",
+    "source_location",
+    "source_quote",
+    "is_derived",
+    "source_of_record",
+    "authority_rank",
+    "status",
+    "extraction_method"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "is_derived": {
+            "const": true
+          }
+        },
+        "required": [
+          "is_derived"
+        ]
+      },
+      "then": {
+        "required": [
+          "derivation"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "unit": {
+            "const": "USD"
+          }
+        },
+        "required": [
+          "unit"
+        ]
+      },
+      "then": {
+        "required": [
+          "currency"
+        ]
+      }
+    }
+  ]
+}
