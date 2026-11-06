@@ -16,6 +16,9 @@ const DOCS = {
   D21:{t:"PFP 2025 results briefing (Executive Board)", url:"https://www.unicef.org/executiveboard/media/38256/file/2026-AS-Informal-PFP-financial-report-Haddad-Mardini-PPT-EN-2026-05-15.pdf", pub:"15 May 2026"}
 };
 
+/* Date every source was last checked for newer reports. "Latest" always means latest in this prototype as of this date. */
+const SOURCES_CHECKED = "5 Nov 2026";
+
 /* ===== Data: verified fact cards (draft v0.2, re-checked 5 Nov 2026; final review pending) ===== */
 const SDN_REQ = 962866106, GLB_REQ = 7661245305;
 const SHARE = (SDN_REQ / GLB_REQ * 100).toFixed(1);
@@ -50,7 +53,7 @@ const CARDS = [
     facts:[["Humanitarian resources received in 2026","US$97,531,794"],["Other resources used in 2026","US$127,628,543"],["Carried forward from 2025","US$127,055,683"],["Funding gap","US$610,650,086 (63%)"]],
     basis:"“Mobilised” adds three things: humanitarian resources received in 2026, other resources used in 2026, and funds carried forward from 2025.",
     kw:"latest current funding status funded gap mobilised received money sudan appeal how much this year so far", nums:["352.2","610.7","63","97.5","127.6","127.1"],
-    clarify:{when:[["received","this year"],["received","so far"],["received","in 2026"],["money","this year"]], text:"Humanitarian resources received in 2026 were US$97.5M, about 10% of the requirement (calculated). The US$352.2M “mobilised” total also counts US$127.6M of other resources used in 2026 and US$127.1M carried forward from 2025, so it should not be described as money received this year."}},
+    clarify:{when:[["received","this year"],["received","so far"],["received","in 2026"],["received","352"],["money","this year"]], text:"Humanitarian resources received in 2026 were US$97.5M, about 10% of the requirement (calculated). The US$352.2M “mobilised” total also counts US$127.6M of other resources used in 2026 and US$127.1M carried forward from 2025, so it should not be described as money received this year."}},
   {id:"C2", group:"C-growth", title:"Sudan appeal funding growth, end of June to end of August 2026", text:"Funds mobilised for Sudan grew by about US$1.1 million between 30 June and 31 August 2026 (US$351.1M to US$352.2M). Humanitarian resources received in 2026 rose from US$96.4M to US$97.5M.", derived:true, derivation:"352.2 − 351.1 and 97.5 − 96.4, from Reports No. 44 and No. 46. Calculated by this prototype, not published.", asOf:"30 Jun and 31 Aug 2026", d:"2026-08-31", status:"current", doc:["D08","D10"], loc:"D08 p.2; D10 p.1", kw:"grow growth grew increase increased change between end june august funding momentum flat how much sudan appeal"},
   {id:"S11", group:"SDN-results", title:"Sudan results, January to August 2026", text:"January to August 2026: 348,438 children with severe wasting admitted for treatment (55% of target); 7.2 million people with access to safe water (60% of target); 1.2 million children, adolescents and caregivers reached with community-based mental health and psychosocial support.", asOf:"31 Aug 2026", d:"2026-08-31", status:"current", doc:"D10", loc:"pp.3-4",
     facts:[["Children with severe wasting admitted for treatment","348,438 (55% of target)"],["People with access to safe water","7.2 million (60% of target)"],["Children, adolescents and caregivers reached with mental health and psychosocial support","1.2 million"]],
@@ -107,7 +110,7 @@ const RULES = [
    msg:"Campaign-level National Committee results are internal. They are not in the public documents this prototype uses.", route:"The PFP Emergency Fundraising Unit, or internal fundraising reports."},
   {type:"REFUSE_ROUTE", name:"Internal: cleared messages and images", re:/\b(cleared|approved|sign[- ]?off)\b[^?]*\b(photos?|images?|messages?|messaging|assets?|visuals?)\b|\b(photos?|images?|key messages?)\b[^?]*\b(cleared|approved)\b/i,
    msg:"Cleared messages and images are managed in internal systems and clearance processes, not in public documents.", route:"Your communications or clearance focal point, and the internal asset library."},
-  {type:"ABSTAIN", name:"No evidence: gift impact", re:/(\$|us\$|usd|aud|eur|€|£)\s?\d|\bgifts?\b|\bper[- ](child|family|dollar|donor)\b/i,
+  {type:"ABSTAIN", name:"No evidence: gift impact", re:/\b(gifts?|donations?)\b|\bper[- ](child|family|dollar|donor|person)\b|(\$|us\$|usd|aud|eur|€|£)\s?\d[\d,.]*(?![\d.,]|\s?(k|m|bn|million|billion)\b)\s+(can\s+|could\s+|will\s+|would\s+)?(provides?|buys?|pays?\s+for|feeds?|vaccinates?|protects?|helps?|supports?)\b/i,
    msg:"The public documents give no cost-per-child or per-gift impact figures for this response. The prototype will not build one from supply counts or appeal totals.", route:"The approved gift-impact statements from your fundraising team."},
   {type:"ABSTAIN", name:"No evidence: forecast", re:/\b(forecast|projection|projected|predict(ed|ion)?)\b|\bwill\b[^?]*\bbe\b[^?]*\b(end of|by the end|next year|by december|in 2027)\b/i,
    msg:"No forecast exists in the sources, and the prototype does not predict figures.", route:"The latest reported figure with its date, and the next situation report when it is published."}
@@ -160,8 +163,8 @@ const INDEX = (() => {
   const avg = docs.reduce((a, d) => a + d.len, 0) / docs.length;
   return {docs, df, avg, n:docs.length};
 })();
-function search(q){
-  const k1 = 1.4, b = 0.6, qt = [...new Set(tokens(q))], named = crisisOfQuery(q);
+function search(q, only){
+  const k1 = 1.4, b = 0.6, qt = [...new Set(tokens(q))], named = only || crisisOfQuery(q);
   return INDEX.docs.map(d => {
     let s = 0;
     for (const t of qt){
@@ -195,7 +198,24 @@ function answer(q, today){
       return {behaviour:r.type, rule:r, near, hits, cites:new Set(), notes:[], variants:[], history:[], others:[]};
     }
   }
-  const hits = search(q);
+  const named = crisisOfQuery(q);
+  if (named.length > 1) return answerParts(q, today, named);
+  return answerFrom(q, today, search(q));
+}
+/* A question that names two crises is answered once per crisis, so a partial answer cannot pass as a complete one. */
+const CRISIS_NAME = {SDN:"Sudan", NPL:"Nepal floods"};
+function answerParts(q, today, named){
+  const parts = named.map(k => Object.assign(answerFrom(q, today, search(q, [k]).filter(x => x.card.crisis.includes(k))), {crisis:k, crisisName:CRISIS_NAME[k] || k}));
+  const cites = new Set(); parts.forEach(p => p.cites.forEach(d => cites.add(d)));
+  const notes = [];
+  const missing = parts.filter(p => !p.primary).map(p => p.crisisName);
+  if (missing.length) notes.push(`No verified figure for ${missing.join(" and ")} answers this question. Only the other part is answered.`);
+  const groups = parts.filter(p => p.primary).map(p => p.primary.group.split("-")[1]);
+  if (groups.length > 1 && groups.every(g => g === "funding")) notes.push("The two funding figures are not on the same basis. Sudan reports funds mobilised, including other resources and funds carried forward from 2025; Nepal reports funds received, excluding loans. Compare the gap percentages with care, and give both dates.");
+  const hits = parts.flatMap(p => p.hits).sort((a, b) => b.score - a.score);
+  return {behaviour:"MULTI_PART", parts, partial:missing.length > 0, notes, cites, hits, variants:[], history:[], others:[]};
+}
+function answerFrom(q, today, hits){
   if (!hits.length || hits[0].score < MIN_SCORE)
     return {behaviour:"ABSTAIN", rule:{name:"No matching evidence", msg:"Nothing in the corpus answers this question.", route:"Rephrase the question, or add a source document to the corpus."}, hits, cites:new Set(), notes:[], variants:[], history:[], others:[]};
   const top = hits[0].card, g = GROUPS[top.group];

@@ -30,4 +30,20 @@ for (const [id, q, exp] of reserve) {
   console.log(`${pad(id, 4)} expected ${pad(exp, 19)} got ${pad(r.behaviour, 19)} ${ok ? "ok" : "MISS"}`);
 }
 console.log(`\nReserve behaviour ${rb}/${reserve.length}`);
-process.exit(b === dev.length && s === dev.length ? 0 : 1);
+
+// Regression checks: cases found in review on 6 November 2026. They test fixes, not accuracy,
+// so they are kept apart from the development and reserve sets.
+const regression = [
+  ["X1", "Is the Sudan appeal US$962.9 million?", r => r.behaviour !== "ABSTAIN" && r.primary && r.primary.id === "S1", "answers with the requirement, not a gift-impact refusal"],
+  ["X2", "Has UNICEF received US$352.2M for Sudan?", r => r.behaviour === "CLARIFY_DEFINITION", "flags that US$352.2M is mobilised, not received"],
+  ["X3", "Can we say US$100 provides clean water for a family in Sudan?", r => r.behaviour === "ABSTAIN", "still refuses a per-gift impact claim"],
+  ["X4", "Compare the funding gaps for Sudan and Nepal", r => r.behaviour === "MULTI_PART" && r.parts.map(p => p.primary && p.primary.id).join() === "S10,N6", "answers both crises, each from its own card"]
+];
+console.log("\nRegression checks\n");
+let xb = 0;
+for (const [id, q, test, what] of regression) {
+  const ok = test(E.answer(q, today)); if (ok) xb++;
+  console.log(`${pad(id, 4)} ${ok ? "ok  " : "FAIL"} ${what}`);
+}
+console.log(`\nRegression ${xb}/${regression.length}`);
+process.exit(b === dev.length && s === dev.length && xb === regression.length ? 0 : 1);

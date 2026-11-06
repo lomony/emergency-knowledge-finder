@@ -2,45 +2,61 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const BEH = {ANSWER:["ok","Answer"], ANSWER_CALC:["calc","Calculated answer"], ANSWER_FLAG:["warn","Answer with a flag"], CORRECT_PREMISE:["warn","Outdated figure corrected"], CLARIFY_DEFINITION:["calc","Definition check"], ABSTAIN:["old","Not in the sources"], REFUSE_ROUTE:["stop","Internal information"]};
-const STATUS = {current:["ok","Current"], superseded:["old","Superseded"], initial:["old","Initial figure"], variant:["warn","Variant"]};
+const BEH = {ANSWER:["ok","Answer"], ANSWER_CALC:["calc","Calculated answer"], ANSWER_FLAG:["warn","Answer with a flag"], CORRECT_PREMISE:["warn","Outdated figure corrected"], CLARIFY_DEFINITION:["calc","Definition check"], ABSTAIN:["old","Not in the sources"], REFUSE_ROUTE:["stop","Internal information"], MULTI_PART:["calc","Answered in parts"]};
+const STATUS = {current:["ok","Latest in this prototype"], superseded:["old","Superseded"], initial:["old","Initial figure"], variant:["warn","Variant"]};
 const TYPECLS = {"Normal":"", "T1 Stale":"t1", "T2 No evidence":"t2", "T3 Variant":"t3", "T4 Definition":"t4", "T5 Internal":"t5"};
 const pill = (cls, label) => `<span class="pill ${cls}">${esc(label)}</span>`;
+/* Titles say "latest" only as stored; the page says what that means: latest in this prototype, as of the sources check. */
+const dispTitle = t => { const x = t.replace(/\s*\((latest)( count)?\)/i, "").replace(/^Latest /, ""); return x.charAt(0).toUpperCase() + x.slice(1); };
 const statusPill = c => { const s = c.derived ? ["calc","Calculated"] : (STATUS[c.status] || STATUS.current); return pill(s[0], s[1]); };
 function refLink(id){ const d = DOCS[id]; if (!d) return `<span class="ref">${esc(id)}</span>`; return `<a class="ref" href="${esc(d.url)}" target="_blank" rel="noopener" title="${esc(d.t)}">${esc(id)}</a>`; }
-function sourceBlock(c){ return docsOf(c).map(id => `<div class="src">${refLink(id)} <span>${esc(DOCS[id] ? DOCS[id].t : id)}</span></div>`).join("") + (c.loc ? `<div class="loc">${esc(c.loc)}</div>` : ""); }
+function sourceBlock(c){ return docsOf(c).map(id => `<div class="src">${refLink(id)} <span>${esc(DOCS[id] ? DOCS[id].t : id)}${DOCS[id] ? ` <span class="loc">· ${esc(DOCS[id].pub)}</span>` : ""}</span></div>`).join("") + (c.loc ? `<div class="loc">${esc(c.loc)}</div>` : ""); }
 function factTable(c){ if (!c.facts) return ""; return `<div class="tbl-wrap"><table class="tbl facts"><tbody>${c.facts.map(f => `<tr><th scope="row">${esc(f[0])}</th><td class="num">${esc(f[1])}</td></tr>`).join("")}</tbody></table></div>`; }
 function miniCard(c, label){
   return `<div class="mini"><div class="mini-h">${label ? `<span class="eyebrow">${esc(label)}</span>` : ""}${statusPill(c)}<span class="asof">As of ${esc(c.asOf)}</span></div>`
-    + `<p class="mini-t"><strong>${esc(c.title)}.</strong> ${esc(c.text)}</p>${c.note ? `<p class="mini-note">${esc(c.note)}</p>` : ""}`
+    + `<p class="mini-t"><strong>${esc(dispTitle(c.title))}.</strong> ${esc(c.text)}</p>${c.note ? `<p class="mini-note">${esc(c.note)}</p>` : ""}`
     + `<div class="mini-src">${docsOf(c).map(refLink).join(" ")} <span class="loc">${esc(c.loc || "")}</span></div></div>`;
 }
 function traceHtml(r){
-  const rows = (r.hits || []).slice(0, 5).map(x => `<tr><td class="mono">${esc(x.card.id)}</td><td>${esc(x.card.title)}</td><td>${statusPill(x.card)}</td><td class="num">${x.score.toFixed(2)}</td></tr>`).join("");
+  const rows = (r.hits || []).slice(0, 5).map(x => `<tr><td class="mono">${esc(x.card.id)}</td><td>${esc(dispTitle(x.card.title))}</td><td>${statusPill(x.card)}</td><td class="num">${x.score.toFixed(2)}</td></tr>`).join("");
   const rule = r.rule ? `<p>Scope rule applied: ${esc(r.rule.name)}.</p>` : "";
   return `${rule}<p class="muted">Keyword ranking (BM25) over ${INDEX.n} verified fact cards, with cards from the crisis named in the question ranked first. The top card’s group decides which figure is current.</p>`
     + `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Card</th><th>Title</th><th>Status</th><th class="num">Score</th></tr></thead><tbody>${rows || `<tr><td colspan="4">No matches</td></tr>`}</tbody></table></div>`;
 }
-function renderAnswer(q){
-  const r = answer(q); const b = BEH[r.behaviour];
-  let h = `<article class="answer"><div class="ans-top ${b[0]}"><span class="ans-k">${esc(b[1])}</span><span class="q-echo">${esc(q)}</span></div><div class="ans-body">`;
+function answerBody(r){
+  let h = "";
   if (r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE"){
     h += `<p class="lead">${esc(r.rule.msg)}</p><p class="note"><span class="note-k">Where to go</span>${esc(r.rule.route)}</p>`;
     if (r.near) h += miniCard(r.near, "Nearest verified fact");
+    return h;
+  }
+  const p = r.primary;
+  if (r.behaviour === "CORRECT_PREMISE") h += `<p class="premise">The figure in the question is from ${esc(r.premise.asOf)} (${esc(docsOf(r.premise).map(d => DOCS[d] ? DOCS[d].t : d).join(", "))}). The latest figure in this prototype is below.</p>`;
+  if (r.clarify) h += `<p class="lead">${esc(r.clarify)}</p>`;
+  h += `<h3 class="ans-title">${esc(dispTitle(p.title))}</h3><p class="${r.clarify ? "body" : "lead"}">${esc(p.text)}</p>`;
+  if (p.derived) h += `<p class="calc-note"><span class="note-k">How it was calculated</span>${esc(p.derivation)}</p>`;
+  h += factTable(p);
+  h += `<dl class="meta"><div><dt>Data as of</dt><dd>${esc(p.asOf)}</dd></div><div><dt>Source document</dt><dd>${sourceBlock(p)}</dd></div>`
+    + `<div><dt>Sources last checked</dt><dd>${esc(SOURCES_CHECKED)}</dd></div><div><dt>Status</dt><dd>${statusPill(p)}</dd></div></dl>`;
+  if (p.status === "current" && !p.derived) h += `<p class="note small"><span class="note-k">What “latest” means here</span>This is the newest figure in this prototype’s documents, which were last checked for newer reports on ${esc(SOURCES_CHECKED)}. A newer report may exist. Check the source before you use the figure.</p>`;
+  if (p.basis) h += `<p class="note"><span class="note-k">What the figure includes</span>${esc(p.basis)}</p>`;
+  if (r.flag) h += `<p class="flag"><span class="note-k">Flag</span>${esc(r.flag)}</p>`;
+  r.notes.forEach(n => { if (n) h += `<p class="flag"><span class="note-k">Note</span>${esc(n)}</p>`; });
+  r.others.forEach(c => { h += miniCard(c, "Also published"); });
+  r.variants.forEach(c => { h += miniCard(c, "Variant"); });
+  if (r.history.length) h += `<details class="hist"><summary>Earlier figures (${r.history.length})</summary>${r.history.map(c => miniCard(c)).join("")}</details>`;
+  return h;
+}
+function renderAnswer(q){
+  const r = answer(q);
+  const b = r.behaviour === "MULTI_PART" && r.partial ? ["warn","Partly answered"] : BEH[r.behaviour];
+  let h = `<article class="answer"><div class="ans-top ${b[0]}"><span class="ans-k">${esc(b[1])}</span><span class="q-echo">${esc(q)}</span></div><div class="ans-body">`;
+  if (r.behaviour === "MULTI_PART"){
+    h += `<p class="lead">This question covers ${r.parts.length} crises. Each one is answered separately below.</p>`;
+    r.notes.forEach(n => { h += `<p class="flag"><span class="note-k">Read before comparing</span>${esc(n)}</p>`; });
+    r.parts.forEach(pt => { const pb = BEH[pt.behaviour]; h += `<section class="part"><div class="part-h"><h3>${esc(pt.crisisName)}</h3>${pill(pb[0], pb[1])}</div>${answerBody(pt)}</section>`; });
   } else {
-    const p = r.primary;
-    if (r.behaviour === "CORRECT_PREMISE") h += `<p class="premise">The figure in the question is from ${esc(r.premise.asOf)} (${esc(docsOf(r.premise).map(d => DOCS[d] ? DOCS[d].t : d).join(", "))}). The latest figure is below.</p>`;
-    if (r.clarify) h += `<p class="lead">${esc(r.clarify)}</p>`;
-    h += `<h3 class="ans-title">${esc(p.title)}</h3><p class="${r.clarify ? "body" : "lead"}">${esc(p.text)}</p>`;
-    if (p.derived) h += `<p class="calc-note"><span class="note-k">How it was calculated</span>${esc(p.derivation)}</p>`;
-    h += factTable(p);
-    h += `<dl class="meta"><div><dt>As of</dt><dd>${esc(p.asOf)}</dd></div><div><dt>Source</dt><dd>${sourceBlock(p)}</dd></div><div><dt>Status</dt><dd>${statusPill(p)}</dd></div></dl>`;
-    if (p.basis) h += `<p class="note"><span class="note-k">What the figure includes</span>${esc(p.basis)}</p>`;
-    if (r.flag) h += `<p class="flag"><span class="note-k">Flag</span>${esc(r.flag)}</p>`;
-    r.notes.forEach(n => { if (n) h += `<p class="flag"><span class="note-k">Note</span>${esc(n)}</p>`; });
-    r.others.forEach(c => { h += miniCard(c, "Also published"); });
-    r.variants.forEach(c => { h += miniCard(c, "Variant"); });
-    if (r.history.length) h += `<details class="hist"><summary>Earlier figures (${r.history.length})</summary>${r.history.map(c => miniCard(c)).join("")}</details>`;
+    h += answerBody(r);
   }
   h += `<details class="trace"><summary>How this answer was found</summary>${traceHtml(r)}</details></div></article>`;
   $("#answer").innerHTML = h;
@@ -54,7 +70,8 @@ const EXAMPLES = [
   ["Nepal funding","How much is UNICEF appealing for in Nepal, and how much is funded?"],
   ["Private sector 2025","How much did UNICEF raise from the private sector in 2025?"],
   ["What does $50 provide?","What does a $50 gift provide for families hit by the Nepal floods?"],
-  ["Our NatCom’s total","How much has our National Committee raised for the Nepal floods appeal, and how do we compare with other National Committees?"]
+  ["Our NatCom’s total","How much has our National Committee raised for the Nepal floods appeal, and how do we compare with other National Committees?"],
+  ["Sudan vs Nepal gaps","Compare the funding gaps for Sudan and Nepal"]
 ];
 
 /* Crises */
@@ -80,7 +97,7 @@ const CRISES = {
 };
 function situationHtml(c){
   const latest = c.figs.map(f => CARD[f[2]]).sort((a, b) => b.d.localeCompare(a.d))[0];
-  let h = `<section class="sin" aria-label="Situation in numbers"><div class="sin-h"><h3>Situation in numbers</h3><span class="muted small">Latest as of ${esc(latest.asOf)}</span></div><div class="figs">`;
+  let h = `<section class="sin" aria-label="Situation in numbers"><div class="sin-h"><h3>Situation in numbers</h3><span class="muted small">Latest in this prototype: ${esc(latest.asOf)} · sources checked ${esc(SOURCES_CHECKED)}</span></div><div class="figs">`;
   h += c.figs.map(([v, l, id]) => { const x = CARD[id]; return `<div class="fig"><div class="fig-v">${esc(v)}</div><p class="fig-l">${esc(l)}</p><div class="fig-s"><span>${esc(x.asOf)}</span>${docsOf(x).map(refLink).join(" ")}</div></div>`; }).join("");
   h += `</div>`;
   const f = c.fund;
@@ -97,8 +114,8 @@ function renderCrisis(key){
   $$(".seg-crisis button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === key)));
   let h = `<header class="sec-h"><h2>${esc(c.name)}</h2><p class="muted">${esc(c.sub)}</p></header>`;
   h += situationHtml(c);
-  h += `<h3 class="h3">Current figures</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Figure</th><th>As of</th><th>Source</th></tr></thead><tbody>`;
-  h += c.current.map(id => { const x = CARD[id]; return `<tr><th scope="row">${esc(x.title)}</th><td>${esc(x.text)}${x.flag ? `<div class="cell-flag">${esc(x.flag)}</div>` : ""}</td><td class="nowrap">${esc(x.asOf)}</td><td class="nowrap">${docsOf(x).map(refLink).join(" ")}</td></tr>`; }).join("");
+  h += `<h3 class="h3">Latest figures in this prototype</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Item</th><th>Figure</th><th>As of</th><th>Source</th></tr></thead><tbody>`;
+  h += c.current.map(id => { const x = CARD[id]; return `<tr><th scope="row">${esc(dispTitle(x.title))}</th><td>${esc(x.text)}${x.flag ? `<div class="cell-flag">${esc(x.flag)}</div>` : ""}</td><td class="nowrap">${esc(x.asOf)}</td><td class="nowrap">${docsOf(x).map(refLink).join(" ")}</td></tr>`; }).join("");
   h += `</tbody></table></div>`;
   const hs = c.hist; const rows = hs.fromFacts ? CARD[hs.fromFacts].facts.map(f => [f[0], f[1], "D01"]) : hs.rows;
   const cols = hs.fromFacts ? hs.cols.concat(["Source"]) : hs.cols;
@@ -115,21 +132,43 @@ function renderCrisis(key){
   $("#crisis-out").innerHTML = h;
 }
 
-/* 72-hour brief */
+/* Emergency briefing: the initial 72-hour brief and later updates */
 const BRIEF = [
-  {id:"v1", label:"v1 · 29 Aug", asOf:"29 August 2026, about 72 hours after onset", sections:[["Situation","B0"],["People and children affected","N2"],["Schools and health facilities","B3"],["UNICEF response","B1"],["Funding","B2"]], changes:[]},
-  {id:"v2", label:"v2 · 31 Aug", asOf:"31 August 2026", sections:[["Situation","N1"],["People and children affected","N3i"],["Schools and health facilities","B4"],["UNICEF response","N4"],["Funding","N3f"]],
+  {id:"v1", label:"Initial 72-hour brief · 29 Aug", stage:"Initial 72-hour brief",
+    review:[],
+    verify:["Impact figures come from the first press release (27 August) and are early estimates. Expect them to change.","No funding status has been published yet. Do not say how much of the appeal is funded."],
+    next:[["Check the Nepal situation reports page for Report No. 1 before reusing these figures.","D19"],["Before any external use, send the brief to your communications or clearance focal point.",""]], asOf:"29 August 2026, about 72 hours after onset", sections:[["Situation","B0"],["People and children affected","N2"],["Schools and health facilities","B3"],["UNICEF response","B1"],["Funding","B2"]], changes:[]},
+  {id:"v2", label:"Update 1 · 31 Aug", stage:"Update 1",
+    review:["Update any appeal page, deck or email that still says “at least 17,000 children” or “about 332 deaths”."],
+    verify:["Deaths and missing people were still rising on 31 August. Give the as-of date with every figure.","The 23% funding figure counts a US$2.5M Emergency Programme Fund loan as available funds. It is not money received from donors."],
+    next:[["Check for the next situation report before reusing these figures.","D19"],["Before any external use, send the brief to your communications or clearance focal point.",""]], asOf:"31 August 2026", sections:[["Situation","N1"],["People and children affected","N3i"],["Schools and health facilities","B4"],["UNICEF response","N4"],["Funding","N3f"]],
     changes:["Children affected: at least 17,000 → 22,100","Deaths: about 332 → 903, still rising","Missing: hundreds → about 4,247","Funding: first status published, 23% available including a US$2.5M EPF loan"]},
-  {id:"v3", label:"v3 · 13 Oct", asOf:"13 October 2026 (government figures of 9 October)", sections:[["Situation","N1"],["People and children affected","N5"],["Education","N9"],["UNICEF response","N7"],["Funding","N6"]],
+  {id:"v3", label:"Update 2 · 13 Oct", stage:"Update 2",
+    review:["Replace 22,100 children affected and 903 deaths in any material based on the 31 August update.","Do not describe the move from 23% to 51% as funding doubling. The basis changed: EPF loans are now excluded."],
+    verify:["Report No. 8 was due on 28 October and was not listed when the sources were checked on 5 November. Treat these figures as possibly out of date.","Education: 30,000 children needing support (Report No. 7) and “about 10,000” (27 August press release) come from different documents. Check what each one counts before comparing them."],
+    next:[["Check the Nepal situation reports page for Report No. 8 or later.","D19"],["Send the brief to your communications or clearance focal point, and keep it marked Draft until it is cleared.",""],["For campaign results or approved gift-impact statements, ask the PFP Emergency Fundraising Unit. They are not in public documents.",""]], asOf:"13 October 2026 (government figures of 9 October)", sections:[["Situation","N1"],["People and children affected","N5"],["Education","N9"],["UNICEF response","N7"],["Funding","N6"]],
     changes:["Children affected: 22,100 → 32,021","Deaths: 903 → 1,458","Missing: about 4,247 → 5,285, including 195 children","Children needing education support: about 10,000 (27 Aug press release) → 30,000","Funding: 51% received. EPF loans are now excluded, so 23% → 51% is not growth on the same basis","Report No. 8 was due on 28 October and was not listed on 5 November"]}
 ];
 let briefText = "";
 function renderBrief(id){
   const v = BRIEF.find(x => x.id === id) || BRIEF[BRIEF.length - 1];
   $$(".seg-brief button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === v.id)));
-  let h = `<article class="brief"><div class="brief-top"><p class="eyebrow">Knowledge brief for fundraising teams · ${esc(v.label)}</p><span class="stamp">Draft · not cleared</span></div><h2 class="brief-h">Nepal floods 2026</h2>`
-    + `<p class="brief-asof">Figures as of ${esc(v.asOf)}. Draft for internal clearance, not approved messaging.</p>`;
-  const lines = [`Nepal floods 2026: knowledge brief (${v.label})`, `Figures as of ${v.asOf}. Draft for internal clearance, not approved messaging.`, ""];
+  const prev = BRIEF[BRIEF.indexOf(v) - 1];
+  let h = `<article class="brief"><div class="brief-top"><p class="eyebrow">Emergency briefing for fundraising teams · ${esc(v.stage)}</p><span class="stamp">Draft · not cleared</span></div><h2 class="brief-h">Nepal floods 2026</h2>`
+    + `<p class="brief-asof">Figures as of ${esc(v.asOf)}. Sources last checked ${esc(SOURCES_CHECKED)}. Draft for internal clearance, not approved messaging.</p>`;
+  const lines = [`Nepal floods 2026: emergency briefing, ${v.label}`, `Status: DRAFT, not cleared. Not approved messaging.`, `Figures as of ${v.asOf}. Sources last checked ${SOURCES_CHECKED}.`, ""];
+  const li = x => `<li>${esc(x)}</li>`;
+  h += `<section class="todo" aria-label="Before you use this brief"><h3 class="todo-h">Before you use this brief</h3><div class="todo-grid">`
+    + `<div class="todo-col"><h4>What changed</h4>${v.changes.length ? `<p class="todo-sub">Since ${esc(prev.label)}</p><ul class="list">${v.changes.map(li).join("")}</ul>` : `<p>First version. There is no earlier brief to compare.</p>`}</div>`
+    + `<div class="todo-col"><h4>Review existing materials</h4>${v.review.length ? `<ul class="list">${v.review.map(li).join("")}</ul>` : `<p>Nothing to replace yet.</p>`}</div>`
+    + `<div class="todo-col"><h4>What to verify</h4><ul class="list">${v.verify.map(li).join("")}</ul></div>`
+    + `<div class="todo-col"><h4>Next steps</h4><ol class="list">${v.next.map(([t, d]) => `<li>${esc(t)}${d ? " " + refLink(d) : ""}</li>`).join("")}</ol></div>`
+    + `</div></section>`;
+  lines.push("BEFORE YOU USE THIS BRIEF");
+  if (v.changes.length) lines.push(`What changed since ${prev.label}:`, ...v.changes.map(x => `- ${x}`));
+  if (v.review.length) lines.push("Review existing materials:", ...v.review.map(x => `- ${x}`));
+  lines.push("What to verify:", ...v.verify.map(x => `- ${x}`));
+  lines.push("Next steps:", ...v.next.map(([t, d], i) => `${i + 1}. ${t}${d ? ` [${d}] ${DOCS[d].url}` : ""}`), "");
   v.sections.forEach(([t, cid]) => {
     const c = CARD[cid];
     h += `<section class="b-sec"><h3>${esc(t)}</h3><div><p>${esc(c.text)} ${docsOf(c).map(refLink).join(" ")}</p>${factTable(c)}`
@@ -139,10 +178,6 @@ function renderBrief(id){
     if (c.flag) lines.push(`Note: ${c.flag}`);
     lines.push("");
   });
-  if (v.changes.length){
-    h += `<section class="b-sec"><h3>What changed</h3><div><ul class="list">${v.changes.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></section>`;
-    lines.push("WHAT CHANGED SINCE THE PREVIOUS VERSION", ...v.changes.map(x => `- ${x}`), "");
-  }
   const used = [...new Set(v.sections.flatMap(([, cid]) => docsOf(CARD[cid])))];
   h += `<section class="b-sec"><h3>Sources</h3><div><ul class="list">${used.map(d => `<li>${refLink(d)} ${esc(DOCS[d].t)} (${esc(DOCS[d].pub)})</li>`).join("")}</ul></div></section></article>`;
   lines.push("SOURCES", ...used.map(d => `[${d}] ${DOCS[d].t} (${DOCS[d].pub}) ${DOCS[d].url}`));

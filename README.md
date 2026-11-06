@@ -22,17 +22,17 @@ This prototype explores one way to deal with that. It is designed to sit on top 
 
 | View | What it shows |
 |---|---|
-| **Ask** | Type a question or pick an example. The answer gives the figure, its as-of date, the document and page, its status, and the behaviour the prototype chose. |
-| **Crises** | One page each for Sudan and the Nepal floods: current figures with dates and sources, how key figures changed over time, and variants and update checks. |
-| **72-hour brief** | A knowledge brief on the Nepal floods for fundraising teams, in three versions (29 Aug, 31 Aug and 13 Oct 2026). Each version lists what changed since the previous one and can be copied as plain text with its sources. |
+| **Ask** | Type a question or pick an example. The answer gives the figure, the date of the data, the source document with its date and page, the date the sources were last checked, its status, and the behaviour the prototype chose. A question about two crises is answered in two parts. |
+| **Crises** | One page each for Sudan, the Nepal floods and the global picture: a situation-in-numbers panel and funding bar, the latest figures in this prototype with dates and sources, how key figures changed over time, and variants and update checks. |
+| **Emergency briefing** | A brief on the Nepal floods for fundraising teams: the initial 72-hour brief (29 Aug 2026) and two updates (31 Aug and 13 Oct). Each version opens with what to do next: what changed, which existing materials to review, what still needs verifying, and next steps, including who clears the text. It can be copied as plain text with its sources, dates and draft status. |
 | **Evaluation** | The 30 evaluation questions, run live in the page, with the result for each. |
 | **Sources and method** | How answers are produced, the scope and data rules, limitations and the document list. |
 
-![Version 3 of the 72-hour brief on the Nepal floods](docs/img/brief.png)
+![Update 2 of the emergency briefing on the Nepal floods](docs/img/brief.png)
 
 ## How it answers
 
-Every answer carries one of seven behaviours.
+Every answer carries one of eight behaviours.
 
 | Behaviour | When it is used | Example question |
 |---|---|---|
@@ -43,6 +43,7 @@ Every answer carries one of seven behaviours.
 | `CLARIFY_DEFINITION` | The honest answer depends on which definition is meant. | "How much money has UNICEF received for Sudan this year?" |
 | `ABSTAIN` | The public documents hold no evidence for the claim, such as per-gift impact or a forecast. | "What does a $50 gift provide for families hit by the Nepal floods?" |
 | `REFUSE_ROUTE` | The answer is held in internal systems. The prototype says where to ask instead. | "Which photos and key messages are cleared for our Sudan campaign?" |
+| `MULTI_PART` | The question names two crises. Each is answered separately, and the answer says plainly if one part has no evidence. Funding figures on different bases carry a warning. | "Compare the funding gaps for Sudan and Nepal" |
 
 ## How it works
 
@@ -52,7 +53,9 @@ Every answer carries one of seven behaviours.
 - **Definition checks.** Some cards carry clarification triggers. For example, a question about money "received" "this year" for Sudan gets the received figure, with an explanation of how it differs from the larger "mobilised" total.
 - **Labelled calculations.** Derived figures show their formula and inputs.
 - **Update checks.** A card can record when the next report is due, and the answer is flagged once that date has passed.
-- **Scope rules** stop the prototype from answering four kinds of question that public documents cannot support: a National Committee's own campaign results, cleared messages and images, per-gift impact, and forecasts.
+- **"Latest" means latest in this prototype.** Each answer separates the date of the data, the date of the source document and the date the sources were last checked for newer reports (5 November 2026), because a newer report may have been published since.
+- **Questions about two crises** are answered once per crisis, so a partial answer cannot pass as a complete one.
+- **Scope rules** stop the prototype from answering four kinds of question that public documents cannot support: a National Committee's own campaign results, cleared messages and images, per-gift impact, and forecasts. The per-gift rule looks for what money buys ("What does a $50 gift provide?"), not for any amount, so "Is the Sudan appeal US$962.9 million?" is answered.
 - **No language model writes the answers** in this version. Every number shown comes from a card checked against its source.
 
 The logic is in [`src/engine.js`](src/engine.js) (data, search and answer rules) and the interface in [`src/ui.js`](src/ui.js).
@@ -76,8 +79,9 @@ Five reserve questions (R1 to R5) test the same behaviours with new questions. T
 | Follows the expected behaviour | 30 of 30 |
 | Cites an expected source | 30 of 30 |
 | Reserve questions: follows the expected behaviour | 5 of 5 |
+| Regression checks for issues found in review (6 November 2026) | 4 of 4 |
 
-**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. Figure accuracy and as-of dates are scored by hand in the workbook.
+**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. Figure accuracy and as-of dates are scored by hand in the workbook. The source check counts an answer as correct when it cites at least one expected source; it does not yet check that every part of the answer, every number and every date has its own source.
 
 Run the evaluation with `node eval/run_eval.js` (or `npm test`).
 

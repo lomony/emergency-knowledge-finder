@@ -159,6 +159,15 @@ details{margin-top:12px;} summary{cursor:pointer; font-weight:700; color:var(--a
 .b-sec > div{min-width:0;}
 .b-sec p{margin:0 0 8px; max-width:66ch;} .b-note{color:var(--muted); font-size:14px;} .b-flag{background:var(--warn-soft); padding:8px 12px; border-radius:4px; font-size:14px;}
 .list{margin:0; padding-left:20px;} .list li{margin:4px 0;}
+.todo{margin:22px 0 8px; background:var(--cyan-soft); border-radius:4px; padding:16px clamp(14px, 3vw, 22px) 18px;}
+.todo-h{font-size:17px; font-weight:800; margin:0 0 10px;}
+.todo-grid{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px 28px;}
+.todo-col{min-width:0; font-size:14px;}
+.todo-col h4{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin:0 0 4px;}
+.todo-col p{margin:0 0 4px;} .todo-sub{color:var(--muted); font-size:13px;}
+.part{margin:18px 0 0; padding-top:16px; border-top:2px solid var(--cyan);}
+.part-h{display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin-bottom:8px;}
+.part-h h3{font-size:20px; font-weight:800; margin:0;}
 
 /* Evaluation */
 .scores{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin:20px 0 8px;}
@@ -181,6 +190,7 @@ details{margin-top:12px;} summary{cursor:pointer; font-weight:700; color:var(--a
   .tabs{gap:8px 20px;} .tab{font-size:15px;}
   .lead{font-size:16.5px;} .tbl{font-size:13.5px;} .brief-h{font-size:28px;} .sec-h h2{font-size:28px;}
   .b-sec{grid-template-columns:minmax(0, 1fr);}
+  .todo-grid{grid-template-columns:minmax(0, 1fr);}
   .chips-wrap{flex-direction:column; gap:8px;}
   .btn{flex:1 1 auto;}
 }

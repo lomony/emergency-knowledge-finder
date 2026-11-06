@@ -8,7 +8,7 @@
   <div class="wrap tabs" role="tablist">
     <button class="tab" role="tab" id="tab-ask" data-view="ask" aria-controls="view-ask">Ask</button>
     <button class="tab" role="tab" id="tab-crises" data-view="crises" aria-controls="view-crises">Crises</button>
-    <button class="tab" role="tab" id="tab-brief" data-view="brief" aria-controls="view-brief">72-hour brief</button>
+    <button class="tab" role="tab" id="tab-brief" data-view="brief" aria-controls="view-brief">Emergency briefing</button>
     <button class="tab" role="tab" id="tab-evaluation" data-view="evaluation" aria-controls="view-evaluation">Evaluation</button>
     <button class="tab" role="tab" id="tab-sources" data-view="sources" aria-controls="view-sources">Sources and method</button>
   </div>
@@ -40,11 +40,11 @@
   <section id="view-brief" role="tabpanel" aria-labelledby="tab-brief" hidden>
     <div class="brief-bar">
       <div class="seg seg-brief" role="group" aria-label="Brief version">
-        <button type="button" data-k="v1" aria-pressed="false">v1 · 29 Aug</button>
-        <button type="button" data-k="v2" aria-pressed="false">v2 · 31 Aug</button>
-        <button type="button" data-k="v3" aria-pressed="true">v3 · 13 Oct</button>
+        <button type="button" data-k="v1" aria-pressed="false">Initial 72-hour brief · 29 Aug</button>
+        <button type="button" data-k="v2" aria-pressed="false">Update 1 · 31 Aug</button>
+        <button type="button" data-k="v3" aria-pressed="true">Update 2 · 13 Oct</button>
       </div>
-      <button type="button" id="copy-brief" class="btn ghost">Copy brief text</button>
+      <button type="button" id="copy-brief" class="btn ghost">Copy brief with sources</button>
       <span id="copy-status" class="muted small" aria-live="polite"></span>
     </div>
     <div id="brief-out"></div>
