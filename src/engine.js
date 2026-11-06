@@ -318,42 +318,59 @@ const QUESTIONS = [
 ].map(([id,type,persona,q,exp,docs]) => ({id,type,persona,q,exp,docs}));
 /* ===== Strict scoring =====
    Each claim is a value from the draft gold answer in eval/questions_v0.2.csv, with the documents it must come from.
-   Strict pass = expected behaviour + every claim shown (complete) + every claim shown by a card that cites one of its documents (evidenced)
-   + the answer's as-of date matches the gold date (dated). Refusals pass when they give a route and present no figure as the answer. */
+   A quantity claim ("US$352.2M", "63%", "1,458") is compared as a value with its currency and unit, so 63% does not match 163%
+   and US$1.1 million does not match US$351.1 million. Any other claim is matched as a whole phrase.
+   Strict pass = expected behaviour + every claim shown (complete) + each claim shown by a card that cites one of the claim's
+   documents (cited) + the answer's as-of date matches the gold date (dated). This checks what the page shows against the
+   fact cards; it does not re-read the source PDFs. Refusals pass when they give a route and present no figure as the answer. */
 const GOLD = {
-  Q01:{asOf:"Dec 2025", claims:[["7.66 billion",["D01"]],["117 million",["D01"]],["73 million",["D01"]],["133 countries",["D01"]]]},
-  Q02:{asOf:"Dec 2025", claims:[["962.9",["D01"]],["949.1",["D01"]],["673.8",["D01"]],["481.4",["D01"]],["402.7",["D01"]],["401.5",["D01"]]]},
+  Q01:{asOf:"Dec 2025", claims:[["US$7.66 billion",["D01"]],["117 million",["D01"]],["73 million",["D01"]],["133 countries and territories",["D01"]]]},
+  Q02:{asOf:"Dec 2025", claims:[["US$962.9M",["D01"]],["US$949.1M",["D01"]],["US$673.8M",["D01"]],["US$481.4M",["D01"]],["US$402.7M",["D01"]],["US$401.5M",["D01"]]]},
   Q03:{asOf:"Dec 2025", claims:[["12.6%",["D01"]]]},
   Q04:{asOf:"Dec 2025", claims:[["200 million children",["D01","D02"]],["73 million",["D01","D02"]],["117 million",["D01","D02"]]]},
   Q05:{asOf:"2025", claims:[["83%",["D21"]],["17%",["D21"]],["90%",["D21"]]]},
   Q06:{asOf:"2025", claims:[["France",["D21"]],["Germany",["D21"]],["Japan",["D21"]],["Republic of Korea",["D21"]],["Spain",["D21"]]]},
-  Q07:{asOf:"31 Aug 2026", claims:[["352.2",["D10"]],["962.9",["D10"]],["610.7",["D10"]],["63%",["D10"]]]},
-  Q08:{asOf:"2026 appeal", claims:[["257.2",["D03"]],["225.4",["D03"]],["173.4",["D03"]],["150.0",["D03"]],["77.2",["D03"]],["58.7",["D03"]],["20.9",["D03"]]]},
+  Q07:{asOf:"31 Aug 2026", claims:[["US$352.2M",["D10"]],["US$962.9M",["D10"]],["US$610.7M",["D10"]],["63%",["D10"]]]},
+  Q08:{asOf:"2026 appeal", claims:[["US$257.2M",["D03"]],["US$225.4M",["D03"]],["US$173.4M",["D03"]],["US$150.0M",["D03"]],["US$77.2M",["D03"]],["US$58.7M",["D03"]],["US$20.9M",["D03"]]]},
   Q09:{asOf:"2026 appeal", claims:[["7.9 million",["D03"]],["13.8 million",["D03"]],["3.6 million",["D03"]],["633,611",["D03"]],["1.6 million",["D03"]],["12 million",["D03"]]]},
   Q10:{asOf:"31 Aug 2026", claims:[["348,438",["D10"]],["55%",["D10"]],["7.2 million",["D10"]],["60%",["D10"]],["1.2 million",["D10"]]]},
   Q11:{asOf:"31 Aug 2026", claims:[["58,000",["D10"]],["Blue Nile",["D10"]],["Darfur",["D10"]],["Kordofan",["D10"]]]},
-  Q12:{asOf:"2026 appeal", claims:[["hyperinflation",["D03"]],["market volatility",["D03"]],["insecurity",["D03"]],["logistical",["D03"]]]},
-  Q13:{asOf:"30 Jun and 31 Aug 2026", claims:[["1.1 million",["D08","D10"]],["351.1",["D08"]],["352.2",["D10"]],["96.4",["D08"]],["97.5",["D10"]]]},
-  Q14:{asOf:"2026 appeal", claims:[["Core Commitments for Children",["D03"]]]},
-  Q15:{asOf:"31 Aug 2026", claims:[["26 August",["D12","D11"]],["Rasuwa",["D12","D11"]],["Nuwakot",["D12"]],["Dhading",["D12"]],["Gorkha",["D12"]],["Tanahun",["D12"]],["15 municipalities",["D12"]]]},
+  Q12:{asOf:"2026 appeal", claims:[["hyperinflation",["D03"]],["market volatility",["D03"]],["insecurity",["D03"]],["logistical barriers",["D03"]]]},
+  Q13:{asOf:"30 Jun and 31 Aug 2026", claims:[["US$1.1 million",["D08","D10"]],["US$351.1M",["D08"]],["US$352.2M",["D10"]],["US$96.4M",["D08"]],["US$97.5M",["D10"]]]},
+  Q14:{asOf:"2026 appeal", claims:[["Core Commitments for Children in Humanitarian Action",["D03"]]]},
+  Q15:{asOf:"31 Aug 2026", claims:[["26 August 2026",["D12","D11"]],["Rasuwa",["D12","D11"]],["Nuwakot",["D12"]],["Dhading",["D12"]],["Gorkha",["D12"]],["Tanahun",["D12"]],["15 municipalities",["D12"]]]},
   Q16:{asOf:"31 Aug 2026", claims:[["19,000",["D12"]],["3,820",["D12"]],["1,052",["D12"]],["237",["D12"]],["500 cartons",["D12"]],["560 cartons",["D12"]]]},
   Q17:{asOf:"9 Oct 2026", claims:[["9,000",["D18"]],["35,589",["D18"]],["36,000",["D18"]],["8,974",["D18"]],["894",["D18"]],["1,481",["D18"]],["52 temporary learning centres",["D18"]],["934",["D18"]]]},
-  Q18:{asOf:"13 Oct 2026", claims:[["17,243,050",["D18"]],["8,776,695",["D18"]],["51%",["D18"]],["8,466,355",["D18"]],["49%",["D18"]],["23%",["D18","D12"]]]},
-  Q19:{asOf:"5 Nov 2026", claims:[["Seven reports",["D19"]],["28 October",["D18","D19"]]]},
-  Q20:{asOf:"8 Dec 2025", claims:[["publication date",["D02"]],["updated periodically",["D02"]]]},
-  Q21:{asOf:"31 Aug 2026", claims:[["16%",["D04"]],["352.2",["D10"]],["63%",["D10"]]]},
+  Q18:{asOf:"13 Oct 2026", claims:[["US$17,243,050",["D18"]],["US$8,776,695",["D18"]],["51%",["D18"]],["US$8,466,355",["D18"]],["49%",["D18"]],["23%",["D18","D12"]]]},
+  Q19:{asOf:"5 Nov 2026", claims:[["Seven reports",["D19"]],["28 October 2026",["D18","D19"]]]},
+  Q20:{asOf:"8 Dec 2025", claims:[["stated publication date",["D02"]],["updated periodically",["D02"]]]},
+  Q21:{asOf:"31 Aug 2026", claims:[["16%",["D04"]],["US$352.2M",["D10"]],["63%",["D10"]]]},
   Q22:{asOf:"9 Oct 2026", claims:[["17,000",["D11"]],["332",["D11"]],["32,021",["D18"]],["84,270",["D18"]],["1,458",["D18"]],["5,285",["D18"]],["195",["D18"]]]},
   Q23:{asOf:null, claims:[]},
-  Q24:{asOf:null, claims:[["63%",["D10"]],["610.7",["D10"]]]},
-  Q25:{asOf:"2026 appeal", claims:[["962,866,106",["D03","D01"]],["963 million",["D04"]],["962.6",["D04"]]]},
-  Q26:{asOf:"2025", claims:[["2,209",["D20"]],["27%",["D20"]],["2.215 billion",["D21"]],["19.7%",["D21"]]]},
-  Q27:{asOf:"31 Aug 2026", claims:[["97.5",["D10"]],["352.2",["D10"]],["127.6",["D10"]],["127.1",["D10"]]]},
+  Q24:{asOf:null, claims:[["63%",["D10"]],["US$610.7M",["D10"]]]},
+  Q25:{asOf:"2026 appeal", claims:[["US$962,866,106",["D03","D01"]],["US$963 million",["D04"]],["US$962.6 million",["D04"]]]},
+  Q26:{asOf:"2025", claims:[["US$2,209M",["D20"]],["27%",["D20"]],["US$2.215 billion",["D21"]],["19.7%",["D21"]]]},
+  Q27:{asOf:"31 Aug 2026", claims:[["US$97.5M",["D10"]],["US$352.2M",["D10"]],["US$127.6M",["D10"]],["US$127.1M",["D10"]]]},
   Q28:{asOf:"2026 appeal", claims:[["17.3 million",["D03"]],["7.9 million",["D03"]],["13.8 million",["D03"]]]},
   Q29:{asOf:null, claims:[]},
   Q30:{asOf:null, claims:[]}
 };
-const normText = t => String(t || "").toLowerCase().replace(/[’']/g, "'").replace(/(\d),(?=\d)/g, "$1").replace(/\s+/g, " ");
-/* What an answer shows, as blocks of text with the documents behind them. */
+const normText = t => String(t || "").toLowerCase().replace(/[’']/g, "'").replace(/(\d),(?=\d{3})/g, "$1").replace(/\s+/g, " ");
+/* Quantities in a text, as "currency|value|unit" keys: "US$352.2M" -> "usd|352.2|m", "63%" -> "|63|%". */
+const QTY_RE = /(us\$|\$)?(?<![\d.])(\d+(?:\.\d+)?)(?![\d])(?:\s?(%|million\b|billion\b|bn\b|m\b|b\b))?/g;
+const UNIT = {"%":"%", million:"m", m:"m", billion:"b", bn:"b", b:"b"};
+function quantities(t){
+  const out = new Set(); let m; QTY_RE.lastIndex = 0;
+  while ((m = QTY_RE.exec(t))) out.add(`${m[1] ? "usd" : ""}|${String(Number(m[2]))}|${m[3] ? UNIT[m[3]] : ""}`);
+  return out;
+}
+const QTY_ONLY = /^(us\$|\$)?\d+(?:\.\d+)?(?:\s?(%|million|billion|bn|m|b))?$/;
+function claimMatcher(val){
+  const v = normText(val);
+  if (QTY_ONLY.test(v)){ const key = [...quantities(v)][0]; return text => quantities(text).has(key); }
+  const re = new RegExp("(?<![\\w.])" + v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\w]|\\.\\d)");
+  return text => re.test(text);
+}
 function shownBlocks(r){
   if (r.behaviour === "MULTI_PART") return r.parts.flatMap(shownBlocks);
   const card = (c, extra) => ({text:normText([c.title, c.text, (c.facts || []).map(f => f.join(" ")).join(" "), c.derivation, c.basis, extra].join(" ")), docs:docsOf(c)});
@@ -366,13 +383,13 @@ function scoreStrict(x, r){
   const g = GOLD[x.id]; const blocks = shownBlocks(r);
   const missing = [], unsupported = [];
   for (const [val, docs] of g.claims){
-    const v = normText(val); const where = blocks.filter(b => b.text.includes(v));
+    const hit = claimMatcher(val); const where = blocks.filter(b => hit(b.text));
     if (!where.length) missing.push(val);
     else if (!where.some(b => b.docs.some(d => docs.includes(d)))) unsupported.push(val);
   }
   const refusal = r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE";
   const dated = g.asOf === null ? (refusal ? !!(r.rule && r.rule.route) : true) : !!(r.primary && normText(r.primary.asOf).includes(normText(g.asOf)));
-  return {complete:!missing.length, evidenced:!missing.length && !unsupported.length, dated, missing, unsupported};
+  return {complete:!missing.length, cited:!missing.length && !unsupported.length, dated, missing, unsupported};
 }
 function runEval(today){
   return QUESTIONS.map(x => {
@@ -380,6 +397,6 @@ function runEval(today){
     const bOk = r.behaviour === x.exp;
     const sOk = x.docs.length ? x.docs.some(d => r.cites.has(d)) : (r.behaviour === "ABSTAIN" || r.behaviour === "REFUSE_ROUTE");
     const st = scoreStrict(x, r);
-    return Object.assign({}, x, {got:r.behaviour, bOk, sOk, top:r.primary ? r.primary.id : (r.near ? r.near.id : ""), strict:bOk && st.complete && st.evidenced && st.dated}, st);
+    return Object.assign({}, x, {got:r.behaviour, bOk, sOk, top:r.primary ? r.primary.id : (r.near ? r.near.id : ""), strict:bOk && st.complete && st.cited && st.dated}, st);
   });
 }

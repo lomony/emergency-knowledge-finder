@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const src = fs.readFileSync(path.join(__dirname, "..", "src", "engine.js"), "utf8");
-const E = new Function(src + "\nreturn {runEval, answer, INDEX, CARDS};")();
+const E = new Function(src + "\nreturn {runEval, answer, INDEX, CARDS, CARD, QUESTIONS, scoreStrict};")();
 const today = new Date("2026-11-05T12:00:00Z"); // fixed date so the update-overdue check is reproducible
 const pad = (s, n) => String(s).padEnd(n);
 
@@ -11,12 +11,12 @@ const dev = E.runEval(today);
 console.log("Development set: 30 questions (the rules were tuned on this set)\n");
 for (const r of dev) {
   console.log(`${pad(r.id, 4)} ${pad(r.type, 15)} expected ${pad(r.exp, 19)} got ${pad(r.got, 19)} ${r.bOk ? "behaviour ok" : "BEHAVIOUR MISS"}  ${r.sOk ? "source ok" : "SOURCE MISS"}  ${r.strict ? "strict ok" : "STRICT MISS"}`);
-  if (!r.strict) console.log(`     complete ${r.complete}, evidenced ${r.evidenced}, dated ${r.dated}${r.missing.length ? "; missing: " + r.missing.join(", ") : ""}${r.unsupported.length ? "; wrong source: " + r.unsupported.join(", ") : ""}`);
+  if (!r.strict) console.log(`     complete ${r.complete}, cited ${r.cited}, dated ${r.dated}${r.missing.length ? "; missing: " + r.missing.join(", ") : ""}${r.unsupported.length ? "; wrong source: " + r.unsupported.join(", ") : ""}`);
 }
 const b = dev.filter(r => r.bOk).length, s = dev.filter(r => r.sOk).length;
 const st = dev.filter(r => r.strict).length;
 console.log(`\nBehaviour ${b}/${dev.length} | Source ${s}/${dev.length} | Searchable fact cards ${E.INDEX.n} of ${E.CARDS.length}`);
-console.log(`Strict ${st}/${dev.length} (expected behaviour, every gold claim shown, each from an expected document, as-of date matches)`);
+console.log(`Strict ${st}/${dev.length} (expected behaviour; every gold figure shown with its value and unit; each from a card citing an expected document; as-of date matches)`);
 
 const reserve = [
   ["R1", "How many people are internally displaced in Sudan?", "ANSWER_FLAG"],
@@ -56,4 +56,26 @@ for (const [id, q, test, what] of regression) {
   console.log(`${pad(id, 4)} ${ok ? "ok  " : "FAIL"} ${what}`);
 }
 console.log(`\nRegression ${xb}/${regression.length}`);
-process.exit(b === dev.length && s === dev.length && st === dev.length && xb === regression.length ? 0 : 1);
+
+// Scorer checks: the strict scorer must fail answers that are broken on purpose.
+const Q = id => E.QUESTIONS.find(x => x.id === id);
+const swapText = (c, from, to) => Object.assign({}, c, {text:c.text.split(from).join(to), facts:c.facts && c.facts.map(f => [f[0], f[1].split(from).join(to)])});
+const broken = [
+  ["S1", "Q07", "funding gap changed from 63% to 163%", r => { r.primary = swapText(r.primary, "(63%)", "(163%)"); }],
+  ["S2", "Q07", "US$352.2M changed to US$352.25M", r => { r.primary = swapText(r.primary, "US$352.2M", "US$352.25M"); }],
+  ["S3", "Q13", "US$1.1 million removed, US$351.1M still shown", r => { r.primary = swapText(r.primary, "about US$1.1 million", "a small amount"); }],
+  ["S4", "Q09", "12 million changed to 1.2 million", r => { r.primary = swapText(r.primary, "12 million", "1.2 million"); }],
+  ["S5", "Q07", "answered with the February card", r => { r.primary = E.CARD.S6; }],
+  ["S6", "Q21", "earlier figure not shown", r => { r.premise = null; }],
+  ["S7", "Q18", "basis-change caveat dropped", r => { r.flag = ""; }],
+  ["S8", "Q25", "variant credited to the wrong document", r => { r.variants = r.variants.map(c => Object.assign({}, c, {doc:"D10"})); }]
+];
+console.log("\nScorer checks (each broken answer must fail strict scoring)\n");
+let sb = 0;
+for (const [id, qid, what, breakIt] of broken) {
+  const r = E.answer(Q(qid).q, today); breakIt(r);
+  const sc = E.scoreStrict(Q(qid), r); const caught = !(sc.complete && sc.cited && sc.dated); if (caught) sb++;
+  console.log(`${pad(id, 4)} ${caught ? "ok  " : "FAIL"} ${qid}: ${what}`);
+}
+console.log(`\nScorer ${sb}/${broken.length}`);
+process.exit(b === dev.length && s === dev.length && st === dev.length && xb === regression.length && sb === broken.length ? 0 : 1);

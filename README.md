@@ -80,11 +80,16 @@ Five reserve questions (R1 to R5) test the same behaviours with new questions. T
 |---|---|
 | Follows the expected behaviour | 30 of 30 |
 | Cites an expected source | 30 of 30 |
-| Strict: every figure in the gold answer shown, each from an expected document, with the gold as-of date | 30 of 30 |
+| Strict: every figure in the gold answer shown with its value and unit, each from a fact card that cites an expected document, with the gold as-of date | 30 of 30 |
 | Reserve questions: follows the expected behaviour | 5 of 5 |
 | Regression checks for issues found in two reviews (6 November 2026) | 11 of 11 |
+| Scorer checks: answers broken on purpose that the strict scorer must fail | 8 of 8 |
 
-**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. The source check counts an answer as correct when it cites at least one expected source. The strict check goes further: each question has a list of claims taken from its draft gold answer in [`eval/questions_v0.2.csv`](eval/questions_v0.2.csv), with the documents each claim must come from. An answer passes only if it has the expected behaviour, shows every claim, shows each claim from a card that cites one of that claim's documents, and carries the gold as-of date. The checker was tested by breaking answers on purpose (a missing figure, the wrong month, half an answer, a missing caveat, a figure credited to the wrong document); each one failed. The strict check reads figures as text, so it confirms what is shown, not that a sentence states it correctly; wording is still reviewed by hand in the workbook.
+**Read these results with care.** The rules and cards were tuned on these same questions, so the scores show that the prototype works as designed, not how it handles new questions. A held-out set, with questions written independently of the rules and questions gathered from interviews with fundraisers, will be scored before any results are claimed. The source check counts an answer as correct when it cites at least one expected source. The strict check goes further: each question has a list of claims taken from its draft gold answer in [`eval/questions_v0.2.csv`](eval/questions_v0.2.csv), with the documents each claim must come from. An answer passes only if it has the expected behaviour, shows every claim, shows each claim from a fact card that cites one of that claim's documents, and carries the gold as-of date. Figures are compared as values with their currency and unit, so 63% does not match 163% and US$1.1 million does not match US$351.1 million; other claims are matched as whole phrases.
+
+What the strict check does not do: it compares the page with the fact cards, not with the source documents. "Cited" means the card that shows the figure cites an expected document; that each card matches its source was checked by hand (see the re-check column in the CSV). It also confirms that a figure is shown, not that the sentence around it is worded correctly; wording is reviewed by hand in the workbook.
+
+The scorer is tested too. `run_eval.js` breaks eight answers on purpose (a gap changed from 63% to 163%, US$352.2M changed to US$352.25M, a missing figure, the wrong month, a missing earlier figure, a dropped caveat, a figure credited to the wrong document) and fails if the strict scorer passes any of them. The first two passed the earlier substring-based scorer.
 
 Run the evaluation with `node eval/run_eval.js` (or `npm test`).
 
